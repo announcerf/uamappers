@@ -1,1 +1,25 @@
+# Rust
 **/target
+**/*.rlib
+**/*.rmeta
+
+# Cargo
+**/Cargo.lock
+
+# Env
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Editor
+.vscode/
+.idea/
+
+# Docker
+.docker/
