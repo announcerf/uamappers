@@ -1,6 +1,6 @@
 use chrono::Utc;
 use sea_orm::sea_query::extension::postgres::PgExpr;
-use sea_orm::sea_query::{Expr, OnConflict};
+use sea_orm::sea_query::{Expr, Func, OnConflict};
 use sea_orm::{
     ColumnTrait, ConnectionTrait, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait,
     QueryFilter, QueryOrder, QuerySelect, Set,
@@ -35,6 +35,7 @@ impl MapperRepo {
 
         let rows = mapper::Entity::find()
             .filter(mapper::Column::CountryCode.eq("UA"))
+            .order_by_desc(mapper::Column::CountRanked)
             .order_by_asc(mapper::Column::OsuUserId)
             .limit(limit)
             .offset(offset)
@@ -49,6 +50,20 @@ impl MapperRepo {
         osu_user_id: i64,
     ) -> Result<Option<mapper::Model>, DbErr> {
         mapper::Entity::find_by_id(osu_user_id).one(&self.db).await
+    }
+
+    pub async fn get_by_username(&self, username: &str) -> Result<Option<mapper::Model>, DbErr> {
+        let username = username.trim();
+        if username.is_empty() {
+            return Ok(None);
+        }
+
+        let username_lower = username.to_ascii_lowercase();
+
+        mapper::Entity::find()
+            .filter(Expr::expr(Func::lower(Expr::col(mapper::Column::Username))).eq(username_lower))
+            .one(&self.db)
+            .await
     }
 
     pub async fn search_ua(
@@ -66,6 +81,7 @@ impl MapperRepo {
         let rows = mapper::Entity::find()
             .filter(mapper::Column::CountryCode.eq("UA"))
             .filter(Expr::col(mapper::Column::Username).ilike(format!("%{}%", query)))
+            .order_by_desc(mapper::Column::CountRanked)
             .order_by_asc(mapper::Column::OsuUserId)
             .limit(limit)
             .offset(offset)
@@ -89,6 +105,8 @@ impl MapperRepo {
             osu_user_id: Set(stats.osu_user_id),
             username: Set(stats.username.clone()),
             country_code: Set(stats.country_code.clone()),
+            kudosu_available: Set(stats.kudosu_available),
+            kudosu_total: Set(stats.kudosu_total),
             count_graveyard: Set(stats.count_graveyard),
             count_pending: Set(stats.count_pending),
             count_wip: Set(stats.count_wip),
@@ -108,6 +126,8 @@ impl MapperRepo {
                     .update_columns([
                         mapper::Column::Username,
                         mapper::Column::CountryCode,
+                        mapper::Column::KudosuAvailable,
+                        mapper::Column::KudosuTotal,
                         mapper::Column::CountGraveyard,
                         mapper::Column::CountPending,
                         mapper::Column::CountWip,
@@ -137,6 +157,8 @@ impl MapperRepo {
             osu_user_id: Set(stats.osu_user_id),
             username: Set(stats.username.clone()),
             country_code: Set(stats.country_code.clone()),
+            kudosu_available: Set(stats.kudosu_available),
+            kudosu_total: Set(stats.kudosu_total),
             count_graveyard: Set(stats.count_graveyard),
             count_pending: Set(stats.count_pending),
             count_wip: Set(stats.count_wip),
@@ -159,7 +181,7 @@ impl MapperRepo {
             .exec(db)
             .await?;
 
-        mapper::Entity::update_many()
+        let mut update = mapper::Entity::update_many()
             .filter(mapper::Column::OsuUserId.eq(stats.osu_user_id))
             .col_expr(
                 mapper::Column::Username,
@@ -202,9 +224,16 @@ impl MapperRepo {
                 mapper::Column::NominatedCount,
                 Expr::value(stats.nominated_count),
             )
-            .col_expr(mapper::Column::UpdatedAt, Expr::value(now))
-            .exec(db)
-            .await?;
+            .col_expr(mapper::Column::UpdatedAt, Expr::value(now));
+
+        if let Some(value) = stats.kudosu_available {
+            update = update.col_expr(mapper::Column::KudosuAvailable, Expr::value(value));
+        }
+        if let Some(value) = stats.kudosu_total {
+            update = update.col_expr(mapper::Column::KudosuTotal, Expr::value(value));
+        }
+
+        update.exec(db).await?;
 
         Ok(())
     }
