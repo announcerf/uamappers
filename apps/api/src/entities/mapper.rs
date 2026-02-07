@@ -7,6 +7,8 @@ pub struct Model {
     pub osu_user_id: i64,
     pub username: String,
     pub country_code: String,
+    pub kudosu_available: Option<i32>,
+    pub kudosu_total: Option<i32>,
     pub count_graveyard: i32,
     pub count_pending: i32,
     pub count_wip: i32,
