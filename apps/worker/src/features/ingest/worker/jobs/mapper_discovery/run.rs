@@ -121,6 +121,7 @@ impl MapperDiscovery {
             if progress_every > 0 && (pages_scanned as u64).is_multiple_of(progress_every) {
                 let elapsed = started_at.elapsed();
                 let throttle = self.osu_client.throttle_snapshot().await;
+                let stats = self.osu_client.stats_snapshot().await;
                 tracing::info!(
                     job = SCAN_NAME,
                     page_index,
@@ -132,6 +133,7 @@ impl MapperDiscovery {
                     elapsed_ms = elapsed.as_millis() as u64,
                     elapsed = %format_duration(elapsed),
                     osu_requests = throttle.acquires,
+                    osu_retries = stats.retries,
                     osu_throttle_sleep_ms = throttle.total_sleep_ms,
                     "discovery progress"
                 );
@@ -164,6 +166,8 @@ impl MapperDiscovery {
         self.scan_state_repo.mark_success(SCAN_NAME).await?;
 
         let elapsed = started_at.elapsed();
+        let throttle = self.osu_client.throttle_snapshot().await;
+        let stats = self.osu_client.stats_snapshot().await;
         tracing::info!(
             job = SCAN_NAME,
             pages_scanned,
@@ -178,6 +182,9 @@ impl MapperDiscovery {
             stopped_at_page,
             elapsed_ms = elapsed.as_millis() as u64,
             elapsed = %format_duration(elapsed),
+            osu_requests = throttle.acquires,
+            osu_retries = stats.retries,
+            osu_throttle_sleep_ms = throttle.total_sleep_ms,
             "discovery scan finished"
         );
         Ok(())

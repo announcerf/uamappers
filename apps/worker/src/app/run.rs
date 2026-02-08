@@ -99,10 +99,12 @@ pub async fn run() -> Result<(), WorkerError> {
 
     let elapsed = started_at.elapsed();
     let throttle = osu_client_stats.throttle_snapshot().await;
+    let stats = osu_client_stats.stats_snapshot().await;
     tracing::info!(
         elapsed_ms = elapsed.as_millis() as u64,
         elapsed = %format_duration(elapsed),
         osu_requests = throttle.acquires,
+        osu_retries = stats.retries,
         osu_throttle_sleep_ms = throttle.total_sleep_ms,
         "worker finished"
     );
