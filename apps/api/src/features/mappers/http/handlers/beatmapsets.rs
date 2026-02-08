@@ -5,9 +5,7 @@ use axum::{
 
 use crate::{app::state::AppState, shared::errors::ApiError};
 
-use super::super::dto::{
-    MapperBeatmapsetDtoV1, MapperBeatmapsetListQuery, MapperBeatmapsetListResponseV1,
-};
+use super::super::dto::{BeatmapsetDtoV1, BeatmapsetListQuery, BeatmapsetListResponseV1};
 use super::common::clamp_limit;
 
 #[utoipa::path(
@@ -16,10 +14,10 @@ use super::common::clamp_limit;
     tag = "Mappers::Beatmapsets",
     params(
         ("user" = String, Path, description = "osu! username"),
-        MapperBeatmapsetListQuery
+        BeatmapsetListQuery
     ),
     responses(
-        (status = 200, description = "Mapper beatmapsets", body = MapperBeatmapsetListResponseV1),
+        (status = 200, description = "Mapper beatmapsets", body = BeatmapsetListResponseV1),
         (status = 404, description = "Not found", body = crate::shared::errors::ErrorResponse),
         (status = 500, description = "Internal error", body = crate::shared::errors::ErrorResponse)
     ),
@@ -28,13 +26,13 @@ use super::common::clamp_limit;
 pub async fn list_mapper_beatmapsets(
     State(state): State<AppState>,
     Path(user): Path<String>,
-    Query(query): Query<MapperBeatmapsetListQuery>,
-) -> Result<Json<MapperBeatmapsetListResponseV1>, ApiError> {
+    Query(query): Query<BeatmapsetListQuery>,
+) -> Result<Json<BeatmapsetListResponseV1>, ApiError> {
     let limit = clamp_limit(query.limit);
     let offset = query.offset.unwrap_or(0);
 
     let Some(mapper) = state
-        .mappers_repo
+        .ua_mappers_repo
         .get_by_username(&user)
         .await
         .map_err(|err| {
@@ -46,8 +44,8 @@ pub async fn list_mapper_beatmapsets(
     };
 
     let (rows, total) = state
-        .beatmapsets_repo
-        .list_by_creator(mapper.osu_user_id, limit, offset)
+        .osu_user_beatmapsets_repo
+        .list_beatmapsets(mapper.osu_user_id, query.kind.as_str(), limit, offset)
         .await
         .map_err(|err| {
             tracing::error!(
@@ -64,24 +62,15 @@ pub async fn list_mapper_beatmapsets(
 
     let items = rows
         .into_iter()
-        .map(|row| MapperBeatmapsetDtoV1 {
+        .map(|row| BeatmapsetDtoV1 {
             osu_beatmapset_id: row.osu_beatmapset_id,
-            creator_osu_user_id: row.creator_osu_user_id,
-            creator_username: row.creator_username,
-            status: row.status,
-            artist: row.artist,
-            title: row.title,
-            artist_unicode: row.artist_unicode,
-            title_unicode: row.title_unicode,
-            submitted_date: row.submitted_date,
-            ranked_date: row.ranked_date,
-            last_updated: row.last_updated,
-            play_count: row.play_count,
-            favourite_count: row.favourite_count,
+            osu_last_updated: row.last_updated,
+            cached_at: row.updated_at,
+            raw: row.raw,
         })
         .collect();
 
-    Ok(Json(MapperBeatmapsetListResponseV1 {
+    Ok(Json(BeatmapsetListResponseV1 {
         items,
         limit,
         offset,
@@ -95,10 +84,10 @@ pub async fn list_mapper_beatmapsets(
     tag = "Mappers::BeatmapsetsById",
     params(
         ("osu_user_id" = i64, Path, description = "osu! user id"),
-        MapperBeatmapsetListQuery
+        BeatmapsetListQuery
     ),
     responses(
-        (status = 200, description = "Mapper beatmapsets", body = MapperBeatmapsetListResponseV1),
+        (status = 200, description = "Mapper beatmapsets", body = BeatmapsetListResponseV1),
         (status = 500, description = "Internal error", body = crate::shared::errors::ErrorResponse)
     ),
     operation_id = "mappers_beatmapsets_list_by_id_v1"
@@ -106,14 +95,14 @@ pub async fn list_mapper_beatmapsets(
 pub async fn list_mapper_beatmapsets_by_id(
     State(state): State<AppState>,
     Path(osu_user_id): Path<i64>,
-    Query(query): Query<MapperBeatmapsetListQuery>,
-) -> Result<Json<MapperBeatmapsetListResponseV1>, ApiError> {
+    Query(query): Query<BeatmapsetListQuery>,
+) -> Result<Json<BeatmapsetListResponseV1>, ApiError> {
     let limit = clamp_limit(query.limit);
     let offset = query.offset.unwrap_or(0);
 
     let (rows, total) = state
-        .beatmapsets_repo
-        .list_by_creator(osu_user_id, limit, offset)
+        .osu_user_beatmapsets_repo
+        .list_beatmapsets(osu_user_id, query.kind.as_str(), limit, offset)
         .await
         .map_err(|err| {
             tracing::error!(error = ?err, osu_user_id, "failed to list mapper beatmapsets");
@@ -125,24 +114,15 @@ pub async fn list_mapper_beatmapsets_by_id(
 
     let items = rows
         .into_iter()
-        .map(|row| MapperBeatmapsetDtoV1 {
+        .map(|row| BeatmapsetDtoV1 {
             osu_beatmapset_id: row.osu_beatmapset_id,
-            creator_osu_user_id: row.creator_osu_user_id,
-            creator_username: row.creator_username,
-            status: row.status,
-            artist: row.artist,
-            title: row.title,
-            artist_unicode: row.artist_unicode,
-            title_unicode: row.title_unicode,
-            submitted_date: row.submitted_date,
-            ranked_date: row.ranked_date,
-            last_updated: row.last_updated,
-            play_count: row.play_count,
-            favourite_count: row.favourite_count,
+            osu_last_updated: row.last_updated,
+            cached_at: row.updated_at,
+            raw: row.raw,
         })
         .collect();
 
-    Ok(Json(MapperBeatmapsetListResponseV1 {
+    Ok(Json(BeatmapsetListResponseV1 {
         items,
         limit,
         offset,

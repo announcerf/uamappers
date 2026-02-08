@@ -2,12 +2,12 @@ use sea_orm::entity::prelude::*;
 use sea_orm::JsonValue;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
-#[sea_orm(table_name = "beatmapsets")]
+#[sea_orm(table_name = "osu_users")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub osu_beatmapset_id: i64,
-    pub last_updated: DateTimeUtc,
+    pub osu_user_id: i64,
     pub raw: JsonValue,
+    pub fetched_at: DateTimeUtc,
     pub created_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }
