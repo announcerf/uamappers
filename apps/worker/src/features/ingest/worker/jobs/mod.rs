@@ -1,1 +1,2 @@
-pub mod beatmapset_scan;
+pub mod mapper_discovery;
+pub mod mapper_enrich;
