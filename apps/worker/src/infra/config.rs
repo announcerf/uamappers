@@ -12,10 +12,7 @@ pub struct WorkerConfig {
 
 impl WorkerConfig {
     pub fn load() -> Result<Self, String> {
-        let database_url = std::env::var("DATABASE_URL")
-            .ok()
-            .filter(|value| !value.is_empty())
-            .unwrap_or_else(uamappers_api::shared::db_url::build_database_url);
+        let database_url = uamappers_api::shared::db_url::build_database_url();
 
         let osu_client_id = std::env::var("OSU_CLIENT_ID")
             .map_err(|_| "OSU_CLIENT_ID is required".to_string())?
