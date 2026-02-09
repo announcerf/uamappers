@@ -1,4 +1,6 @@
 use rosu_v2::prelude::Osu;
+use tracing_subscriber::fmt::format::Writer;
+use tracing_subscriber::fmt::time::FormatTime;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uamappers_api::{
     features::{
@@ -20,6 +22,15 @@ use crate::{
     shared::errors::WorkerError,
 };
 
+struct UtcRfc3339Millis;
+
+impl FormatTime for UtcRfc3339Millis {
+    fn format_time(&self, w: &mut Writer<'_>) -> std::fmt::Result {
+        let ts = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
+        w.write_str(&ts)
+    }
+}
+
 fn init_tracing() {
     let mut filter = match tracing_subscriber::EnvFilter::try_from_default_env() {
         Ok(filter) => filter,
@@ -39,13 +50,13 @@ fn init_tracing() {
         .with(
             tracing_subscriber::fmt::layer()
                 .compact()
+                .with_timer(UtcRfc3339Millis)
                 .with_target(false)
                 .with_file(false)
                 .with_line_number(false)
                 .with_thread_names(false)
                 .with_thread_ids(false)
-                .with_ansi(false)
-                .without_time(),
+                .with_ansi(true),
         )
         .init();
 }
