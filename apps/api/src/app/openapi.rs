@@ -13,6 +13,11 @@ use crate::shared::errors::ErrorResponse;
 
 #[derive(OpenApi)]
 #[openapi(
+    info(
+        title = "uamappers API",
+        description = "Backend API for indexing and serving Ukrainian osu! mappers.",
+        version = "v1"
+    ),
     paths(
         crate::features::mappers::http::handlers::list::list_mappers,
         crate::features::mappers::http::handlers::get::get_mapper,

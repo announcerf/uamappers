@@ -6,7 +6,7 @@ use super::http::handlers;
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/", axum::routing::get(handlers::list_mappers))
+        .route("", axum::routing::get(handlers::list_mappers))
         .route("/search", axum::routing::get(handlers::search_mappers))
         .route(
             "/by-id/{osu_user_id}",

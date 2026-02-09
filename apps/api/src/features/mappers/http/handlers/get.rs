@@ -12,6 +12,7 @@ use super::common::ua_mapper_to_dto;
     get,
     path = "/mappers/{user}",
     tag = "Mappers::Get",
+    summary = "Get UA mapper by username",
     params(("user" = String, Path, description = "osu! username")),
     responses(
         (status = 200, description = "Mapper profile", body = UaMapperProfileDtoV1),
@@ -62,6 +63,7 @@ pub async fn get_mapper(
     get,
     path = "/mappers/by-id/{osu_user_id}",
     tag = "Mappers::GetById",
+    summary = "Get UA mapper by osu user id",
     params(("osu_user_id" = i64, Path, description = "osu! user id")),
     responses(
         (status = 200, description = "Mapper profile", body = UaMapperProfileDtoV1),
