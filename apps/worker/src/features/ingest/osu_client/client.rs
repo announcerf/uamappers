@@ -83,7 +83,7 @@ impl OsuClient {
                         return Err(err.into());
                     }
                     self.inc_retry().await;
-                    tracing::warn!(attempt, error = %err, "osu api next page failed, retrying");
+                    tracing::warn!("osu retry a{} {}", attempt, err);
                     sleep(delay).await;
                     delay = delay.saturating_mul(2);
                 }
@@ -158,7 +158,7 @@ impl OsuClient {
                         return Err(err.into());
                     }
                     self.inc_retry().await;
-                    tracing::warn!(attempt, error = %err, "osu api request failed, retrying");
+                    tracing::warn!("osu retry a{} {}", attempt, err);
                     sleep(delay).await;
                     delay = delay.saturating_mul(2);
                 }
