@@ -7,6 +7,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY Cargo.toml /app/Cargo.toml
+COPY Cargo.lock /app/Cargo.lock
 COPY apps/api/Cargo.toml /app/apps/api/Cargo.toml
 COPY apps/api/src /app/apps/api/src
 COPY apps/worker/Cargo.toml /app/apps/worker/Cargo.toml
