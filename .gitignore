@@ -17,6 +17,9 @@
 # Logs
 *.log
 
+# Backups
+backups/
+
 # Editor
 .vscode/
 .idea/
