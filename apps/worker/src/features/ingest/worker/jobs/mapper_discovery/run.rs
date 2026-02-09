@@ -1,5 +1,4 @@
 use crate::shared::errors::WorkerError;
-use crate::shared::time::format_duration;
 
 use super::page::collect_creators;
 use super::types::{MapperDiscovery, SCAN_NAME};
@@ -24,18 +23,7 @@ impl MapperDiscovery {
 
         let resume_page = self.load_resume_page().await?;
 
-        tracing::info!(
-            job = SCAN_NAME,
-            resume_page,
-            cutoff = ?cutoff,
-            force_rescan = self.config.force_rescan,
-            batch_size = self.config.batch_size,
-            max_pages = ?self.config.max_pages,
-            scan_page_delay_ms = self.config.page_delay_ms,
-            progress_log_every = self.config.progress_log_every,
-            osu_min_request_interval_ms = self.osu_client.min_request_interval_ms(),
-            "starting discovery scan"
-        );
+        tracing::info!("discovery start p{}", resume_page);
 
         let mut result = self
             .osu_client
@@ -46,32 +34,32 @@ impl MapperDiscovery {
         let mut processed_this_run: u32 = 0;
 
         let mut pages_scanned: u32 = 0;
-        let mut creators_seen: u64 = 0;
-        let mut creators_existing: u64 = 0;
-        let mut creators_missing: u64 = 0;
+        let mut _creators_seen: u64 = 0;
+        let mut _creators_existing: u64 = 0;
+        let mut _creators_missing: u64 = 0;
         let mut ua_added: u64 = 0;
         let mut ua_refreshed: u64 = 0;
         let mut non_ua_skipped: u64 = 0;
-        let mut page_delay_sleeps: u64 = 0;
-        let mut page_delay_sleep_ms_total: u64 = 0;
+        let mut _page_delay_sleeps: u64 = 0;
+        let mut _page_delay_sleep_ms_total: u64 = 0;
 
-        let (stop_reason, stopped_at_page) = loop {
+        let (_stop_reason, _stopped_at_page) = loop {
             pages_scanned = pages_scanned.saturating_add(1);
             let creators = collect_creators(&result);
-            creators_seen = creators_seen.saturating_add(creators.len() as u64);
+            _creators_seen = _creators_seen.saturating_add(creators.len() as u64);
             let creator_ids_i64: Vec<i64> = creators.iter().map(|c| c.osu_user_id as i64).collect();
 
             let existing = self
                 .ua_mappers_repo
                 .list_existing_ids(&creator_ids_i64)
                 .await?;
-            creators_existing = creators_existing.saturating_add(existing.len() as u64);
+            _creators_existing = _creators_existing.saturating_add(existing.len() as u64);
             let missing_ids: Vec<u32> = creators
                 .iter()
                 .filter(|c| !existing.contains(&(c.osu_user_id as i64)))
                 .map(|c| c.osu_user_id)
                 .collect();
-            creators_missing = creators_missing.saturating_add(missing_ids.len() as u64);
+            _creators_missing = _creators_missing.saturating_add(missing_ids.len() as u64);
 
             let mut ua_users: Vec<(i64, String, String)> = Vec::new();
 
@@ -122,24 +110,14 @@ impl MapperDiscovery {
             let progress_every = self.config.progress_log_every;
             if progress_every > 0 && (pages_scanned as u64).is_multiple_of(progress_every) {
                 let elapsed = started_at.elapsed();
-                let throttle = self.osu_client.throttle_snapshot().await;
-                let stats = self.osu_client.stats_snapshot().await;
+                let _ = page_index;
                 tracing::info!(
-                    job = SCAN_NAME,
-                    page_index,
+                    "discovery page={} ua+{} ua~{} skip{} {}s",
                     pages_scanned,
-                    creators_seen,
                     ua_added,
                     ua_refreshed,
                     non_ua_skipped,
-                    page_delay_sleeps,
-                    page_delay_sleep_ms_total,
-                    elapsed_ms = elapsed.as_millis() as u64,
-                    elapsed = %format_duration(elapsed),
-                    osu_requests = throttle.acquires,
-                    osu_retries = stats.retries,
-                    osu_throttle_sleep_ms = throttle.total_sleep_ms,
-                    "discovery progress"
+                    elapsed.as_secs()
                 );
             }
 
@@ -161,8 +139,8 @@ impl MapperDiscovery {
 
             let delay_ms = self.config.page_delay_ms;
             if delay_ms > 0 {
-                page_delay_sleeps = page_delay_sleeps.saturating_add(1);
-                page_delay_sleep_ms_total = page_delay_sleep_ms_total.saturating_add(delay_ms);
+                _page_delay_sleeps = _page_delay_sleeps.saturating_add(1);
+                _page_delay_sleep_ms_total = _page_delay_sleep_ms_total.saturating_add(delay_ms);
             }
             tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
             let Some(next) = self.osu_client.beatmapset_search_next(&result).await? else {
@@ -175,28 +153,13 @@ impl MapperDiscovery {
         self.scan_state_repo.mark_success(SCAN_NAME).await?;
 
         let elapsed = started_at.elapsed();
-        let throttle = self.osu_client.throttle_snapshot().await;
-        let stats = self.osu_client.stats_snapshot().await;
         tracing::info!(
-            job = SCAN_NAME,
+            "discovery done page={} ua+{} ua~{} skip{} {}s",
             pages_scanned,
-            creators_seen,
-            creators_existing,
-            creators_missing,
             ua_added,
             ua_refreshed,
             non_ua_skipped,
-            page_delay_sleeps,
-            page_delay_sleep_ms_total,
-            removed = 0u64,
-            stop_reason,
-            stopped_at_page,
-            elapsed_ms = elapsed.as_millis() as u64,
-            elapsed = %format_duration(elapsed),
-            osu_requests = throttle.acquires,
-            osu_retries = stats.retries,
-            osu_throttle_sleep_ms = throttle.total_sleep_ms,
-            "discovery scan finished"
+            elapsed.as_secs()
         );
         Ok(())
     }

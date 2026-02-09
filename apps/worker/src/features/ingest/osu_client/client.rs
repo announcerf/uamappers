@@ -83,7 +83,7 @@ impl OsuClient {
                         return Err(err.into());
                     }
                     self.inc_retry().await;
-                    tracing::warn!(attempt, error = ?err, "osu api next page failed, retrying");
+                    tracing::warn!("osu retry a{} {}", attempt, err);
                     sleep(delay).await;
                     delay = delay.saturating_mul(2);
                 }
@@ -95,8 +95,6 @@ impl OsuClient {
         &self,
         page_index: u32,
     ) -> Result<BeatmapsetSearchResult, WorkerError> {
-        // We store resume cursors as `page:N`. For incremental runs N is typically small,
-        // so replaying `get_next` N times is acceptable and keeps us independent of rosu-v2 internals.
         let mut result = self.beatmapset_search_start().await?;
 
         let mut skipped: u32 = 0;
@@ -160,7 +158,7 @@ impl OsuClient {
                         return Err(err.into());
                     }
                     self.inc_retry().await;
-                    tracing::warn!(attempt, error = ?err, "osu api request failed, retrying");
+                    tracing::warn!("osu retry a{} {}", attempt, err);
                     sleep(delay).await;
                     delay = delay.saturating_mul(2);
                 }
