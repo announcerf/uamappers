@@ -5,6 +5,7 @@ use std::time::Duration;
 use rosu_v2::model::beatmap::BeatmapsetExtended;
 use rosu_v2::model::user::{User, UserBeatmapsetsKind, UserExtended};
 use rosu_v2::prelude::{BeatmapsetSearchResult, BeatmapsetSearchSort, Osu};
+use tokio::sync::Mutex;
 use tokio::time::sleep;
 
 use crate::shared::errors::WorkerError;
@@ -12,10 +13,21 @@ use crate::shared::errors::WorkerError;
 use super::throttle::OsuThrottle;
 use super::throttle::OsuThrottleSnapshot;
 
+#[derive(Debug, Default)]
+struct OsuClientStats {
+    retries: u64,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct OsuClientStatsSnapshot {
+    pub retries: u64,
+}
+
 #[derive(Clone)]
 pub struct OsuClient {
     osu: Arc<Osu>,
     throttle: Arc<OsuThrottle>,
+    stats: Arc<Mutex<OsuClientStats>>,
 }
 
 impl OsuClient {
@@ -23,6 +35,7 @@ impl OsuClient {
         Self {
             osu: Arc::new(osu),
             throttle: Arc::new(OsuThrottle::new()),
+            stats: Arc::new(Mutex::new(OsuClientStats::default())),
         }
     }
 
@@ -32,6 +45,13 @@ impl OsuClient {
 
     pub async fn throttle_snapshot(&self) -> OsuThrottleSnapshot {
         self.throttle.snapshot().await
+    }
+
+    pub async fn stats_snapshot(&self) -> OsuClientStatsSnapshot {
+        let stats = self.stats.lock().await;
+        OsuClientStatsSnapshot {
+            retries: stats.retries,
+        }
     }
 
     pub async fn beatmapset_search_start(&self) -> Result<BeatmapsetSearchResult, WorkerError> {
@@ -62,6 +82,7 @@ impl OsuClient {
                     if attempt >= 5 {
                         return Err(err.into());
                     }
+                    self.inc_retry().await;
                     tracing::warn!(attempt, error = ?err, "osu api next page failed, retrying");
                     sleep(delay).await;
                     delay = delay.saturating_mul(2);
@@ -138,11 +159,17 @@ impl OsuClient {
                     if attempt >= 5 {
                         return Err(err.into());
                     }
+                    self.inc_retry().await;
                     tracing::warn!(attempt, error = ?err, "osu api request failed, retrying");
                     sleep(delay).await;
                     delay = delay.saturating_mul(2);
                 }
             }
         }
+    }
+
+    async fn inc_retry(&self) {
+        let mut stats = self.stats.lock().await;
+        stats.retries = stats.retries.saturating_add(1);
     }
 }

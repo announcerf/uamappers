@@ -6,7 +6,7 @@ use crate::shared::time::format_duration;
 use super::beatmapset::mapset_to_row;
 use super::cursor::{next_beatmapsets_cursor, parse_beatmapsets_cursor, parse_last_id_cursor};
 use super::raw::strip_top_level_id;
-use super::types::{MapperEnrich, BEATMAPSETS_SCAN_NAME, USERS_SCAN_NAME};
+use super::types::{BEATMAPSETS_SCAN_NAME, MapperEnrich, USERS_SCAN_NAME};
 
 const KIND_ORDER: [UserBeatmapsetsKind; 7] = [
     UserBeatmapsetsKind::Favourite,
@@ -76,6 +76,7 @@ impl MapperEnrich {
                 if progress_every > 0 && users_processed.is_multiple_of(progress_every) {
                     let elapsed = started_at.elapsed();
                     let throttle = self.osu_client.throttle_snapshot().await;
+                    let stats = self.osu_client.stats_snapshot().await;
                     tracing::info!(
                         job = USERS_SCAN_NAME,
                         users_processed,
@@ -83,6 +84,7 @@ impl MapperEnrich {
                         elapsed_ms = elapsed.as_millis() as u64,
                         elapsed = %format_duration(elapsed),
                         osu_requests = throttle.acquires,
+                        osu_retries = stats.retries,
                         osu_throttle_sleep_ms = throttle.total_sleep_ms,
                         "user enrich progress"
                     );
@@ -96,11 +98,16 @@ impl MapperEnrich {
         self.scan_state_repo.mark_success(USERS_SCAN_NAME).await?;
 
         let elapsed = started_at.elapsed();
+        let throttle = self.osu_client.throttle_snapshot().await;
+        let stats = self.osu_client.stats_snapshot().await;
         tracing::info!(
             job = USERS_SCAN_NAME,
             users_processed,
             elapsed_ms = elapsed.as_millis() as u64,
             elapsed = %format_duration(elapsed),
+            osu_requests = throttle.acquires,
+            osu_retries = stats.retries,
+            osu_throttle_sleep_ms = throttle.total_sleep_ms,
             "user enrich finished"
         );
         Ok(())
@@ -217,6 +224,7 @@ impl MapperEnrich {
             if progress_every > 0 && pages_persisted.is_multiple_of(progress_every) {
                 let elapsed = started_at.elapsed();
                 let throttle = self.osu_client.throttle_snapshot().await;
+                let stats = self.osu_client.stats_snapshot().await;
                 tracing::info!(
                     job = BEATMAPSETS_SCAN_NAME,
                     pages_persisted,
@@ -229,6 +237,7 @@ impl MapperEnrich {
                     elapsed_ms = elapsed.as_millis() as u64,
                     elapsed = %format_duration(elapsed),
                     osu_requests = throttle.acquires,
+                    osu_retries = stats.retries,
                     osu_throttle_sleep_ms = throttle.total_sleep_ms,
                     "beatmapsets enrich progress"
                 );
@@ -245,6 +254,8 @@ impl MapperEnrich {
             .await?;
 
         let elapsed = started_at.elapsed();
+        let throttle = self.osu_client.throttle_snapshot().await;
+        let stats = self.osu_client.stats_snapshot().await;
         tracing::info!(
             job = BEATMAPSETS_SCAN_NAME,
             users_touched,
@@ -256,6 +267,9 @@ impl MapperEnrich {
             stop_reason,
             elapsed_ms = elapsed.as_millis() as u64,
             elapsed = %format_duration(elapsed),
+            osu_requests = throttle.acquires,
+            osu_retries = stats.retries,
+            osu_throttle_sleep_ms = throttle.total_sleep_ms,
             "beatmapsets enrich finished"
         );
         Ok(())

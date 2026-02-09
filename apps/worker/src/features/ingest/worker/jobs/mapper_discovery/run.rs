@@ -52,6 +52,8 @@ impl MapperDiscovery {
         let mut ua_added: u64 = 0;
         let mut ua_refreshed: u64 = 0;
         let mut non_ua_skipped: u64 = 0;
+        let mut page_delay_sleeps: u64 = 0;
+        let mut page_delay_sleep_ms_total: u64 = 0;
 
         let (stop_reason, stopped_at_page) = loop {
             pages_scanned = pages_scanned.saturating_add(1);
@@ -121,6 +123,7 @@ impl MapperDiscovery {
             if progress_every > 0 && (pages_scanned as u64).is_multiple_of(progress_every) {
                 let elapsed = started_at.elapsed();
                 let throttle = self.osu_client.throttle_snapshot().await;
+                let stats = self.osu_client.stats_snapshot().await;
                 tracing::info!(
                     job = SCAN_NAME,
                     page_index,
@@ -129,9 +132,12 @@ impl MapperDiscovery {
                     ua_added,
                     ua_refreshed,
                     non_ua_skipped,
+                    page_delay_sleeps,
+                    page_delay_sleep_ms_total,
                     elapsed_ms = elapsed.as_millis() as u64,
                     elapsed = %format_duration(elapsed),
                     osu_requests = throttle.acquires,
+                    osu_retries = stats.retries,
                     osu_throttle_sleep_ms = throttle.total_sleep_ms,
                     "discovery progress"
                 );
@@ -153,7 +159,12 @@ impl MapperDiscovery {
                 break ("max_pages", Some(page_index));
             }
 
-            tokio::time::sleep(std::time::Duration::from_millis(self.config.page_delay_ms)).await;
+            let delay_ms = self.config.page_delay_ms;
+            if delay_ms > 0 {
+                page_delay_sleeps = page_delay_sleeps.saturating_add(1);
+                page_delay_sleep_ms_total = page_delay_sleep_ms_total.saturating_add(delay_ms);
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
             let Some(next) = self.osu_client.beatmapset_search_next(&result).await? else {
                 break ("no_next_page", Some(page_index));
             };
@@ -164,6 +175,8 @@ impl MapperDiscovery {
         self.scan_state_repo.mark_success(SCAN_NAME).await?;
 
         let elapsed = started_at.elapsed();
+        let throttle = self.osu_client.throttle_snapshot().await;
+        let stats = self.osu_client.stats_snapshot().await;
         tracing::info!(
             job = SCAN_NAME,
             pages_scanned,
@@ -173,11 +186,16 @@ impl MapperDiscovery {
             ua_added,
             ua_refreshed,
             non_ua_skipped,
+            page_delay_sleeps,
+            page_delay_sleep_ms_total,
             removed = 0u64,
             stop_reason,
             stopped_at_page,
             elapsed_ms = elapsed.as_millis() as u64,
             elapsed = %format_duration(elapsed),
+            osu_requests = throttle.acquires,
+            osu_retries = stats.retries,
+            osu_throttle_sleep_ms = throttle.total_sleep_ms,
             "discovery scan finished"
         );
         Ok(())

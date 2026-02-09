@@ -1,5 +1,6 @@
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+use chrono::Utc;
 use rosu_v2::prelude::Osu;
 use uamappers_api::{
     features::{
@@ -29,6 +30,10 @@ pub async fn run() -> Result<(), WorkerError> {
         .init();
 
     let config = WorkerConfig::load().map_err(WorkerError::Config)?;
+
+    let run_id = format!("{}-{}", Utc::now().timestamp_millis(), std::process::id());
+    let span = tracing::info_span!("worker_run", run_id = %run_id);
+    let _enter = span.enter();
 
     let db = db::connect(&config.database_url).await?;
     let osu = Osu::new(config.osu_client_id, config.osu_client_secret.clone()).await?;
@@ -94,10 +99,12 @@ pub async fn run() -> Result<(), WorkerError> {
 
     let elapsed = started_at.elapsed();
     let throttle = osu_client_stats.throttle_snapshot().await;
+    let stats = osu_client_stats.stats_snapshot().await;
     tracing::info!(
         elapsed_ms = elapsed.as_millis() as u64,
         elapsed = %format_duration(elapsed),
         osu_requests = throttle.acquires,
+        osu_retries = stats.retries,
         osu_throttle_sleep_ms = throttle.total_sleep_ms,
         "worker finished"
     );
