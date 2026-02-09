@@ -1,8 +1,6 @@
 # uamappers
 
-`uamappers` builds and maintains an up-to-date index of the Ukrainian osu! community, starting with Ukrainian mappers.
-
-This repository currently contains the backend API and a crawler worker. A frontend and bot may be added later as separate components.
+esu nyan?
 
 ## Backend
 
@@ -20,14 +18,6 @@ This repository currently contains the backend API and a crawler worker. A front
    - `just worker`
    - `just worker-logs`
    - `just worker-stop`
-
-### Database tables (high level)
-
-- `scan_state`: resumable checkpoints for crawler jobs (cursor, retry/backoff, timestamps).
-- `ua_mappers`: discovered Ukrainian mappers (osu user id, username, country code, first/last seen).
-- `osu_users`: cached raw osu! user payloads keyed by `osu_user_id`.
-- `beatmapsets`: cached raw osu! beatmapset payloads keyed by `osu_beatmapset_id`.
-- `osu_user_beatmapsets`: join table mapping `(osu_user_id, kind) -> beatmapset ids` for fast listing.
 
 ## License
 
