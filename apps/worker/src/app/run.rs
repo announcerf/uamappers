@@ -1,4 +1,4 @@
-use rosu_v3::prelude::Osu;
+use rosu_v2::prelude::Osu;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uamappers_api::{
     features::{
