@@ -58,7 +58,7 @@ impl OsuClient {
         self.retry(|| {
             self.osu
                 .beatmapset_search()
-                .query("status=any")
+                .status(None)
                 .nsfw(true)
                 .sort(BeatmapsetSearchSort::LastUpdate, true)
         })
