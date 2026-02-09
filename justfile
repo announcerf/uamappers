@@ -30,6 +30,10 @@ api-clippy:
 api-test:
 	(cd apps/api && cargo test --all-features --all-targets)
 
+# Run the API locally (no docker).
+api-run:
+	cargo run -p uamappers-api
+
 # Worker-only cargo check.
 worker-check:
 	(cd apps/worker && cargo check --all-features --all-targets)
@@ -41,6 +45,10 @@ worker-clippy:
 # Worker-only tests.
 worker-test:
 	(cd apps/worker && cargo test --all-features --all-targets)
+
+# Run the worker locally (no docker).
+worker-run-local:
+	cargo run -p uamappers-worker
 
 # Start Postgres + API via docker compose (worker is not started by default).
 up:
@@ -80,9 +88,21 @@ migrate:
 		docker compose -p {{project}} exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$f"; \
 	done
 
+# Apply SQL migrations from `apps/api/migrations` to a local Postgres (no docker).
+migrate-local:
+	@PGPASSWORD="$POSTGRES_PASSWORD" pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+	@find apps/api/migrations -maxdepth 1 -name '*.sql' -print | sort | while read -r f; do \
+		echo "Applying $f"; \
+		PGPASSWORD="$POSTGRES_PASSWORD" psql -v ON_ERROR_STOP=1 -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$f"; \
+	done
+
 # Open a psql shell inside the postgres container.
 psql:
 	docker compose -p {{project}} exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+
+# Open a psql shell to a local Postgres (no docker).
+psql-local:
+	PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 
 # Start the worker container (manual profile).
 worker-run: up migrate
