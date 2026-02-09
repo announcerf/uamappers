@@ -66,17 +66,26 @@ nuke:
 
 # Apply SQL migrations from `apps/api/migrations` to the docker Postgres.
 migrate:
+	@i=0; \
+	until docker compose -p {{project}} exec -T postgres pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; do \
+		i=$((i+1)); \
+		if [ $i -ge 30 ]; then \
+			echo "postgres is not ready"; \
+			exit 1; \
+		fi; \
+		sleep 1; \
+	done
 	@find apps/api/migrations -maxdepth 1 -name '*.sql' -print | sort | while read -r f; do \
-		echo "Applying $$f"; \
-		docker compose -p {{project}} exec -T postgres psql -v ON_ERROR_STOP=1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" < "$$f"; \
+		echo "Applying $f"; \
+		docker compose -p {{project}} exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$f"; \
 	done
 
 # Open a psql shell inside the postgres container.
 psql:
-	docker compose -p {{project}} exec postgres psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+	docker compose -p {{project}} exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 
 # Start the worker container (manual profile).
-worker-run:
+worker-run: up migrate
 	docker compose -p {{project}} --profile worker up -d worker
 
 # Stop the worker container if it's running.
