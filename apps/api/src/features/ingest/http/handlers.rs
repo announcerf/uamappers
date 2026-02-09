@@ -8,6 +8,7 @@ use super::dto::{IngestStatusDtoV1, ScanStateDtoV1};
     get,
     path = "/ingest/status",
     tag = "Ingest::Status",
+    summary = "Get ingest scan status",
     responses(
         (status = 200, description = "Current ingest status", body = IngestStatusDtoV1),
         (status = 500, description = "Internal error", body = crate::shared::errors::ErrorResponse)

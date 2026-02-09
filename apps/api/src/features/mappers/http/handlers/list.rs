@@ -9,6 +9,7 @@ use super::common::{clamp_limit, ua_mapper_to_dto};
     get,
     path = "/mappers",
     tag = "Mappers::List",
+    summary = "List UA mappers",
     params(UaMapperListQuery),
     responses(
         (status = 200, description = "List UA mappers", body = UaMapperListResponseV1),
@@ -46,6 +47,7 @@ pub async fn list_mappers(
     get,
     path = "/mappers/search",
     tag = "Mappers::Search",
+    summary = "Search UA mappers",
     params(UaMapperSearchQuery),
     responses(
         (status = 200, description = "Search UA mappers", body = UaMapperListResponseV1),
