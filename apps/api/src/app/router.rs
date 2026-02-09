@@ -10,6 +10,10 @@ use crate::{
 
 pub fn build(state: AppState) -> Router {
     let api_router = Router::new()
+        .route(
+            "/mappers",
+            axum::routing::get(mappers::http::handlers::list_mappers),
+        )
         .nest("/mappers", mappers::routes::router())
         .nest("/ingest", ingest::routes::router())
         .nest("/system", system::routes::router())
