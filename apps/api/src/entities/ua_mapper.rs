@@ -1,23 +1,14 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
-#[sea_orm(table_name = "mappers")]
+#[sea_orm(table_name = "ua_mappers")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub osu_user_id: i64,
     pub username: String,
     pub country_code: String,
-    pub kudosu_available: Option<i32>,
-    pub kudosu_total: Option<i32>,
-    pub count_graveyard: i32,
-    pub count_pending: i32,
-    pub count_wip: i32,
-    pub count_loved: i32,
-    pub count_ranked: i32,
-    pub count_approved: i32,
-    pub count_total: i32,
-    pub is_bn: bool,
-    pub nominated_count: Option<i32>,
+    pub first_seen_at: DateTimeUtc,
+    pub last_seen_at: DateTimeUtc,
     pub created_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }

@@ -3,8 +3,9 @@ use utoipa::OpenApi;
 use crate::features::{
     ingest::http::dto::{IngestStatusDtoV1, ScanStateDtoV1},
     mappers::http::dto::{
-        MapperBeatmapsetDtoV1, MapperBeatmapsetListQuery, MapperBeatmapsetListResponseV1,
-        MapperDtoV1, MapperListQuery, MapperListResponseV1, MapperSearchQuery,
+        BeatmapsetDtoV1, BeatmapsetListQuery, BeatmapsetListResponseV1, UaMapperDtoV1,
+        UaMapperListQuery, UaMapperListResponseV1, UaMapperProfileDtoV1, UaMapperSearchQuery,
+        UserBeatmapsetsKindDtoV1,
     },
     system::http::dto::HealthDtoV1,
 };
@@ -23,13 +24,15 @@ use crate::shared::errors::ErrorResponse;
         crate::features::system::http::handlers::health
     ),
     components(schemas(
-        MapperDtoV1,
-        MapperListResponseV1,
-        MapperListQuery,
-        MapperSearchQuery,
-        MapperBeatmapsetDtoV1,
-        MapperBeatmapsetListQuery,
-        MapperBeatmapsetListResponseV1,
+        UaMapperDtoV1,
+        UaMapperListResponseV1,
+        UaMapperListQuery,
+        UaMapperSearchQuery,
+        UaMapperProfileDtoV1,
+        UserBeatmapsetsKindDtoV1,
+        BeatmapsetDtoV1,
+        BeatmapsetListQuery,
+        BeatmapsetListResponseV1,
         IngestStatusDtoV1,
         ScanStateDtoV1,
         HealthDtoV1,

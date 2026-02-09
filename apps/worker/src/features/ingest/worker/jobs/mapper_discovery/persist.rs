@@ -2,25 +2,21 @@ use sea_orm::TransactionTrait;
 
 use crate::shared::errors::WorkerError;
 
-use super::types::SCAN_NAME;
-use super::Scanner;
+use super::types::{MapperDiscovery, SCAN_NAME};
 
-impl Scanner {
+impl MapperDiscovery {
     pub(crate) async fn persist_page(
         &self,
-        stats: Vec<uamappers_api::features::mappers::domain::model::MapperStats>,
-        beatmapsets: Vec<uamappers_api::entities::beatmapset::ActiveModel>,
+        ua_users: Vec<(i64, String, String)>,
         cursor: Option<String>,
         page_index: u32,
     ) -> Result<(), WorkerError> {
-        let txn = self.mappers_repo.db().begin().await?;
+        let txn = self.ua_mappers_repo.db().begin().await?;
 
-        self.beatmapsets_repo
-            .upsert_many_with(&txn, beatmapsets)
-            .await?;
-
-        for stat in stats {
-            self.mappers_repo.increment_with(&txn, &stat).await?;
+        for (osu_user_id, username, country_code) in ua_users {
+            self.ua_mappers_repo
+                .upsert_with(&txn, osu_user_id, &username, &country_code)
+                .await?;
         }
 
         self.scan_state_repo
@@ -29,7 +25,7 @@ impl Scanner {
 
         txn.commit().await?;
 
-        tracing::info!(job = SCAN_NAME, page_index, "persisted scan page");
+        tracing::debug!(job = SCAN_NAME, page_index, "persisted discovery page");
         Ok(())
     }
 

@@ -9,16 +9,16 @@ pub fn router() -> Router<AppState> {
         .route("/", axum::routing::get(handlers::list_mappers))
         .route("/search", axum::routing::get(handlers::search_mappers))
         .route(
-            "/by-id/osu_user_id",
+            "/by-id/{osu_user_id}",
             axum::routing::get(handlers::get_mapper_by_id),
         )
         .route(
-            "/by-id/osu_user_id/beatmapsets",
+            "/by-id/{osu_user_id}/beatmapsets",
             axum::routing::get(handlers::list_mapper_beatmapsets_by_id),
         )
         .route(
-            "/user/beatmapsets",
+            "/{user}/beatmapsets",
             axum::routing::get(handlers::list_mapper_beatmapsets),
         )
-        .route("/user", axum::routing::get(handlers::get_mapper))
+        .route("/{user}", axum::routing::get(handlers::get_mapper))
 }
