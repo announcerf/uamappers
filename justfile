@@ -54,6 +54,12 @@ down:
 rebuild:
 	docker compose -p {{project}} build --no-cache
 
+# Restart docker services (down -> rebuild -> up).
+reup:
+	docker compose -p {{project}} down
+	docker compose -p {{project}} build --no-cache
+	docker compose -p {{project}} up -d
+
 # Delete all docker resources for this project (DB data included).
 nuke:
 	./scripts/docker_clean.sh {{project}}
