@@ -23,11 +23,40 @@ use crate::{
     shared::time::format_duration,
 };
 
-pub async fn run() -> Result<(), WorkerError> {
+fn init_tracing() {
+    let mut filter = match tracing_subscriber::EnvFilter::try_from_default_env() {
+        Ok(filter) => filter,
+        Err(_) => tracing_subscriber::EnvFilter::new("info"),
+    };
+
+    let rust_log = std::env::var("RUST_LOG").unwrap_or_default();
+    if !rust_log.contains("sqlx=") {
+        filter = filter
+            .add_directive("sqlx=warn".parse().expect("sqlx filter directive"));
+    }
+    if !rust_log.contains("sea_orm=") {
+        filter = filter
+            .add_directive("sea_orm=warn".parse().expect("sea_orm filter directive"));
+    }
+
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::from_default_env())
-        .with(tracing_subscriber::fmt::layer())
+        .with(filter)
+        .with(
+            tracing_subscriber::fmt::layer()
+                .compact()
+                .with_target(false)
+                .with_file(false)
+                .with_line_number(false)
+                .with_thread_names(false)
+                .with_thread_ids(false)
+                .with_ansi(false)
+                .without_time(),
+        )
         .init();
+}
+
+pub async fn run() -> Result<(), WorkerError> {
+    init_tracing();
 
     let config = WorkerConfig::load().map_err(WorkerError::Config)?;
 
