@@ -2,6 +2,7 @@
 set -euo pipefail
 
 project="${1:-uamappers}"
+mode="${2:-full}" # full | schema | data
 
 if [[ ! -f ".env" ]]; then
   echo "Missing .env in repo root" >&2
@@ -16,7 +17,8 @@ set +a
 mkdir -p backups
 
 ts="$(date -u +"%Y%m%d-%H%M%S")"
-out="backups/${POSTGRES_DB}-${ts}.sql.gz"
+suffix="${mode}"
+out="backups/${POSTGRES_DB}-${ts}-${suffix}.sql.gz"
 
 if ! docker compose -p "${project}" ps -q postgres >/dev/null 2>&1; then
   echo "docker compose project '${project}' not found (is postgres running?)" >&2
@@ -30,5 +32,20 @@ if [[ -z "${cid}" ]]; then
 fi
 
 echo "Writing ${out}"
-docker compose -p "${project}" exec -T postgres pg_dump -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" --no-owner --no-privileges \
-  | gzip -9 > "${out}"
+pg_dump_flags=()
+case "${mode}" in
+full) ;;
+schema)
+  pg_dump_flags+=(--schema-only)
+  ;;
+data)
+  pg_dump_flags+=(--data-only)
+  ;;
+*)
+  echo "Unknown mode: ${mode} (expected: full | schema | data)" >&2
+  exit 1
+  ;;
+esac
+
+docker compose -p "${project}" exec -T postgres pg_dump -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" --no-owner --no-privileges "${pg_dump_flags[@]}" |
+  gzip -9 >"${out}"

@@ -7,4 +7,3 @@ if [[ ! -d "backups" ]]; then
 fi
 
 ls -1 backups | sort
-
