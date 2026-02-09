@@ -1,10 +1,8 @@
 services:
   postgres:
     image: postgres:17.7-alpine
-    environment:
-      POSTGRES_DB: uamappers
-      POSTGRES_USER: uamappers
-      POSTGRES_PASSWORD: uamappers
+    env_file:
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -14,19 +12,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
-    environment:
-      DATABASE_URL: postgres://uamappers:uamappers@postgres:5432/uamappers
+    env_file:
+      - .env
     ports:
       - "8080:8080"
     depends_on:
       - postgres
 
   worker:
+    profiles:
+      - worker
     build:
       context: .
       dockerfile: Dockerfile.worker
-    environment:
-      DATABASE_URL: postgres://uamappers:uamappers@postgres:5432/uamappers
+    env_file:
+      - .env
     depends_on:
       - postgres
 
