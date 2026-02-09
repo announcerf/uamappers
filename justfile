@@ -117,6 +117,11 @@ worker-stop:
 worker-logs:
 	docker compose -p {{project}} --profile worker logs -f worker
 
+# Rebuild the worker image and recreate the container.
+worker-rebuild:
+	docker compose -p {{project}} --profile worker build --no-cache worker
+	docker compose -p {{project}} --profile worker up -d --force-recreate worker
+
 # Create a full DB dump into `./backups`.
 backup:
 	./scripts/db_backup.sh {{project}} full
