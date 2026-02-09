@@ -62,10 +62,10 @@ pub async fn run() -> Result<(), WorkerError> {
     osu_client.min_request_interval_ms();
 
     tracing::info!(
-        "start d{} u{} b{}",
-        u8::from(config.run_discovery),
-        u8::from(config.enrich_users),
-        u8::from(config.enrich_beatmapsets)
+        "start disc={} users={} beatmaps={}",
+        if config.run_discovery { "on" } else { "off" },
+        if config.enrich_users { "on" } else { "off" },
+        if config.enrich_beatmapsets { "on" } else { "off" }
     );
 
     let ua_mappers_repo = UaMapperRepo::new(db.clone());
@@ -111,7 +111,7 @@ pub async fn run() -> Result<(), WorkerError> {
     let _ = throttle.total_sleep_ms;
     let stats = osu_client_stats.stats_snapshot().await;
     tracing::info!(
-        "done {}s req{} r{}",
+        "done {}s req{} retry={}",
         elapsed.as_secs(),
         throttle.acquires,
         stats.retries

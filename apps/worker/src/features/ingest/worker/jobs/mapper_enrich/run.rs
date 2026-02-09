@@ -184,7 +184,7 @@ impl MapperEnrich {
             if progress_every > 0 && pages_persisted.is_multiple_of(progress_every) {
                 let elapsed = started_at.elapsed();
                 tracing::info!(
-                    "sets p{} sets{} rel{} {}s",
+                    "sets page={} sets{} rel{} {}s",
                     pages_persisted,
                     beatmapsets_persisted,
                     relations_upserted,
@@ -205,7 +205,7 @@ impl MapperEnrich {
         let elapsed = started_at.elapsed();
         let _ = stop_reason;
         tracing::info!(
-            "sets done p{} sets{} rel{} {}s",
+            "sets done page={} sets{} rel{} {}s",
             pages_persisted,
             beatmapsets_persisted,
             relations_upserted,
