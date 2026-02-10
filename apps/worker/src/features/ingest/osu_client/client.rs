@@ -55,13 +55,16 @@ impl OsuClient {
         }
     }
 
-    pub async fn beatmapset_search_start(&self) -> Result<BeatmapsetSearchResult, WorkerError> {
+    pub async fn beatmapset_search_start(
+        &self,
+        descending: bool,
+    ) -> Result<BeatmapsetSearchResult, WorkerError> {
         self.retry(|| {
             self.osu
                 .beatmapset_search()
                 .status(None)
                 .nsfw(true)
-                .sort(BeatmapsetSearchSort::LastUpdate, true)
+                .sort(BeatmapsetSearchSort::LastUpdate, descending)
         })
         .await
     }
@@ -69,6 +72,7 @@ impl OsuClient {
     pub async fn beatmapset_search_page(
         &self,
         page_index: u32,
+        descending: bool,
     ) -> Result<BeatmapsetSearchResult, WorkerError> {
         let page = page_index.saturating_add(1);
         self.retry(|| {
@@ -76,7 +80,7 @@ impl OsuClient {
                 .beatmapset_search()
                 .status(None)
                 .nsfw(true)
-                .sort(BeatmapsetSearchSort::LastUpdate, true)
+                .sort(BeatmapsetSearchSort::LastUpdate, descending)
                 .page(page)
         })
         .await
@@ -85,6 +89,7 @@ impl OsuClient {
     pub async fn beatmapset_search_from_cursor_string(
         &self,
         cursor_string: &str,
+        descending: bool,
     ) -> Result<BeatmapsetSearchResult, WorkerError> {
         let seed = json!({
             "beatmapsets": [],
@@ -100,7 +105,7 @@ impl OsuClient {
                 "featured_artists": false,
                 "nsfw": true,
                 "_sort": "updated",
-                "descending": true
+                "descending": descending
             },
             "total": 0
         });
@@ -166,10 +171,11 @@ impl OsuClient {
     pub async fn beatmapset_search_resume(
         &self,
         page_index: u32,
+        descending: bool,
     ) -> Result<BeatmapsetSearchResult, WorkerError> {
         match page_index {
-            0 => self.beatmapset_search_start().await,
-            n => self.beatmapset_search_page(n).await,
+            0 => self.beatmapset_search_start(descending).await,
+            n => self.beatmapset_search_page(n, descending).await,
         }
     }
 

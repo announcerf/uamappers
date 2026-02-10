@@ -1,7 +1,7 @@
 use crate::shared::errors::WorkerError;
 
 use super::page::collect_creators;
-use super::types::{DiscoveryResume, MapperDiscovery, SCAN_NAME};
+use super::types::{DiscoveryResume, MapperDiscovery};
 
 impl MapperDiscovery {
     pub async fn run(&self) -> Result<(), WorkerError> {
@@ -18,8 +18,15 @@ impl MapperDiscovery {
 
     async fn run_inner(&self) -> Result<(), WorkerError> {
         let started_at = std::time::Instant::now();
-        let state = self.scan_state_repo.get_by_name(SCAN_NAME).await?;
-        let cutoff = state.as_ref().and_then(|s| s.last_success_at);
+        let cutoff = match self.config.discovery_oldest_first {
+            true => None,
+            false => self
+                .scan_state_repo
+                .get_by_name(self.scan_name())
+                .await?
+                .as_ref()
+                .and_then(|s| s.last_success_at),
+        };
 
         let resume = self.load_resume().await?;
 
@@ -29,12 +36,21 @@ impl MapperDiscovery {
             DiscoveryResume::Cursor(_) => tracing::info!("discovery start cursor"),
         }
 
+        let descending = !self.config.discovery_oldest_first;
         let mut result = match &resume {
-            DiscoveryResume::Start => self.osu_client.beatmapset_search_resume(0).await?,
-            DiscoveryResume::Page(page) => self.osu_client.beatmapset_search_resume(*page).await?,
+            DiscoveryResume::Start => {
+                self.osu_client
+                    .beatmapset_search_resume(0, descending)
+                    .await?
+            }
+            DiscoveryResume::Page(page) => {
+                self.osu_client
+                    .beatmapset_search_resume(*page, descending)
+                    .await?
+            }
             DiscoveryResume::Cursor(cursor) => {
                 self.osu_client
-                    .beatmapset_search_from_cursor_string(cursor)
+                    .beatmapset_search_from_cursor_string(cursor, descending)
                     .await?
             }
         };
@@ -114,7 +130,9 @@ impl MapperDiscovery {
                 (false, false) => None,
             };
 
-            self.persist_page(ua_users, next_cursor, page_index).await?;
+            let save_checkpoint = !self.config.discovery_oldest_first;
+            self.persist_page(ua_users, next_cursor, save_checkpoint, page_index)
+                .await?;
 
             let progress_every = self.config.progress_log_every;
             if progress_every > 0 && (pages_scanned as u64).is_multiple_of(progress_every) {
@@ -159,7 +177,9 @@ impl MapperDiscovery {
             page_index += 1;
         };
 
-        self.scan_state_repo.mark_success(SCAN_NAME).await?;
+        if !self.config.discovery_oldest_first {
+            self.scan_state_repo.mark_success(self.scan_name()).await?;
+        }
 
         let elapsed = started_at.elapsed();
         tracing::info!(
