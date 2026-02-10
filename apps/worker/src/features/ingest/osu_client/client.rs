@@ -65,6 +65,21 @@ impl OsuClient {
         .await
     }
 
+    pub async fn beatmapset_search_page(
+        &self,
+        page_index: u32,
+    ) -> Result<BeatmapsetSearchResult, WorkerError> {
+        self.retry(|| {
+            self.osu
+                .beatmapset_search()
+                .status(None)
+                .nsfw(true)
+                .sort(BeatmapsetSearchSort::LastUpdate, true)
+                .page(page_index)
+        })
+        .await
+    }
+
     pub async fn beatmapset_search_next(
         &self,
         current: &BeatmapsetSearchResult,
@@ -95,21 +110,10 @@ impl OsuClient {
         &self,
         page_index: u32,
     ) -> Result<BeatmapsetSearchResult, WorkerError> {
-        let mut result = self.beatmapset_search_start().await?;
-
-        let mut skipped: u32 = 0;
-        while skipped < page_index {
-            if !result.has_more() {
-                break;
-            }
-            let Some(next) = self.beatmapset_search_next(&result).await? else {
-                break;
-            };
-            result = next;
-            skipped += 1;
+        match page_index {
+            0 => self.beatmapset_search_start().await,
+            n => self.beatmapset_search_page(n).await,
         }
-
-        Ok(result)
     }
 
     pub async fn users<I>(&self, user_ids: I) -> Result<Vec<User>, WorkerError>
