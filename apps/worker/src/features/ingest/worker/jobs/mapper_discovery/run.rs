@@ -1,7 +1,7 @@
 use crate::shared::errors::WorkerError;
 
 use super::page::collect_creators;
-use super::types::{MapperDiscovery, SCAN_NAME};
+use super::types::{DiscoveryResume, MapperDiscovery, SCAN_NAME};
 
 impl MapperDiscovery {
     pub async fn run(&self) -> Result<(), WorkerError> {
@@ -21,16 +21,25 @@ impl MapperDiscovery {
         let state = self.scan_state_repo.get_by_name(SCAN_NAME).await?;
         let cutoff = state.as_ref().and_then(|s| s.last_success_at);
 
-        let resume_page = self.load_resume_page().await?;
+        let resume = self.load_resume().await?;
 
-        tracing::info!("discovery start p{}", resume_page);
+        match &resume {
+            DiscoveryResume::Start => tracing::info!("discovery start p0"),
+            DiscoveryResume::Page(page) => tracing::info!("discovery start p{}", page),
+            DiscoveryResume::Cursor(_) => tracing::info!("discovery start cursor"),
+        }
 
-        let mut result = self
-            .osu_client
-            .beatmapset_search_resume(resume_page)
-            .await?;
+        let mut result = match &resume {
+            DiscoveryResume::Start => self.osu_client.beatmapset_search_resume(0).await?,
+            DiscoveryResume::Page(page) => self.osu_client.beatmapset_search_resume(*page).await?,
+            DiscoveryResume::Cursor(cursor) => {
+                self.osu_client
+                    .beatmapset_search_from_cursor_string(cursor)
+                    .await?
+            }
+        };
 
-        let mut page_index: u32 = resume_page;
+        let mut page_index: u32 = resume.page_index();
         let mut processed_this_run: u32 = 0;
 
         let mut pages_scanned: u32 = 0;
@@ -101,7 +110,7 @@ impl MapperDiscovery {
             let has_more = result.has_more();
             let next_cursor = match (stop_after_this_page, has_more) {
                 (true, _) => None,
-                (false, true) => Some(format!("page:{}", page_index + 1)),
+                (false, true) => encode_search_cursor(&result),
                 (false, false) => None,
             };
 
@@ -163,6 +172,15 @@ impl MapperDiscovery {
         );
         Ok(())
     }
+}
+
+fn encode_search_cursor(result: &rosu_v2::prelude::BeatmapsetSearchResult) -> Option<String> {
+    let value = serde_json::to_value(result).ok()?;
+    let cursor = value.get("cursor_string")?.as_str()?;
+    if cursor.is_empty() {
+        return None;
+    }
+    Some(format!("cursor:{}", cursor))
 }
 
 fn page_is_before_or_equal_cutoff(

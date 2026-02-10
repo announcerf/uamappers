@@ -11,6 +11,7 @@ pub struct WorkerConfig {
     pub max_pages: Option<u32>,
     pub batch_size: usize,
     pub force_rescan: bool,
+    pub resume_from_checkpoint: bool,
     pub run_discovery: bool,
 }
 
@@ -65,6 +66,11 @@ impl WorkerConfig {
             .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
             .unwrap_or(false);
 
+        let resume_from_checkpoint = std::env::var("SCAN_RESUME_FROM_CHECKPOINT")
+            .ok()
+            .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
+            .unwrap_or(true);
+
         let run_discovery = std::env::var("RUN_DISCOVERY")
             .ok()
             .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
@@ -82,6 +88,7 @@ impl WorkerConfig {
             max_pages,
             batch_size,
             force_rescan,
+            resume_from_checkpoint,
             run_discovery,
         })
     }

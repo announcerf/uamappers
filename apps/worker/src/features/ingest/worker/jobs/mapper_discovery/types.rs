@@ -6,6 +6,13 @@ use crate::infra::config::WorkerConfig;
 
 pub(crate) const SCAN_NAME: &str = "mapper_discovery";
 
+#[derive(Clone, Debug)]
+pub(crate) enum DiscoveryResume {
+    Start,
+    Page(u32),
+    Cursor(String),
+}
+
 pub struct MapperDiscovery {
     pub(crate) osu_client: OsuClient,
     pub(crate) config: WorkerConfig,

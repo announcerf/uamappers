@@ -5,6 +5,7 @@ use std::time::Duration;
 use rosu_v2::model::beatmap::BeatmapsetExtended;
 use rosu_v2::model::user::{User, UserBeatmapsetsKind, UserExtended};
 use rosu_v2::prelude::{BeatmapsetSearchResult, BeatmapsetSearchSort, Osu};
+use serde_json::json;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
 
@@ -79,6 +80,58 @@ impl OsuClient {
                 .page(page)
         })
         .await
+    }
+
+    pub async fn beatmapset_search_from_cursor_string(
+        &self,
+        cursor_string: &str,
+    ) -> Result<BeatmapsetSearchResult, WorkerError> {
+        let seed = json!({
+            "beatmapsets": [],
+            "cursor_string": cursor_string,
+            "search": {
+                "status": "any",
+                "video": false,
+                "storyboard": false,
+                "recommended": false,
+                "converts": false,
+                "follows": false,
+                "spotlights": false,
+                "featured_artists": false,
+                "nsfw": true,
+                "_sort": "updated",
+                "descending": true
+            },
+            "total": 0
+        });
+
+        let seed: BeatmapsetSearchResult = serde_json::from_value(seed)
+            .map_err(|err| WorkerError::Config(format!("invalid beatmapset search seed: {err}")))?;
+
+        let mut attempt = 0u32;
+        let mut delay = Duration::from_millis(500);
+
+        loop {
+            self.throttle.acquire().await;
+            match seed.get_next(&self.osu).await {
+                None => {
+                    return Err(WorkerError::Config(
+                        "beatmapset search cursor has no next page".to_string(),
+                    ));
+                }
+                Some(Ok(next)) => return Ok(next),
+                Some(Err(err)) => {
+                    attempt += 1;
+                    if attempt >= 5 {
+                        return Err(err.into());
+                    }
+                    self.inc_retry().await;
+                    tracing::warn!("osu retry a{} {}", attempt, err);
+                    sleep(delay).await;
+                    delay = delay.saturating_mul(2);
+                }
+            }
+        }
     }
 
     pub async fn beatmapset_search_next(
