@@ -5,6 +5,7 @@ use std::time::Duration;
 use rosu_v2::model::beatmap::BeatmapsetExtended;
 use rosu_v2::model::user::{User, UserBeatmapsetsKind, UserExtended};
 use rosu_v2::prelude::{BeatmapsetSearchResult, BeatmapsetSearchSort, Osu};
+use serde_json::json;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
 
@@ -54,15 +55,91 @@ impl OsuClient {
         }
     }
 
-    pub async fn beatmapset_search_start(&self) -> Result<BeatmapsetSearchResult, WorkerError> {
+    pub async fn beatmapset_search_start(
+        &self,
+        descending: bool,
+    ) -> Result<BeatmapsetSearchResult, WorkerError> {
         self.retry(|| {
             self.osu
                 .beatmapset_search()
-                .query("status=any")
+                .status(None)
                 .nsfw(true)
-                .sort(BeatmapsetSearchSort::LastUpdate, true)
+                .sort(BeatmapsetSearchSort::LastUpdate, descending)
         })
         .await
+    }
+
+    pub async fn beatmapset_search_page(
+        &self,
+        page_index: u32,
+        descending: bool,
+    ) -> Result<BeatmapsetSearchResult, WorkerError> {
+        let page = page_index.saturating_add(1);
+        self.retry(|| {
+            self.osu
+                .beatmapset_search()
+                .status(None)
+                .nsfw(true)
+                .sort(BeatmapsetSearchSort::LastUpdate, descending)
+                .page(page)
+        })
+        .await
+    }
+
+    pub async fn beatmapset_search_from_cursor_string(
+        &self,
+        cursor_string: &str,
+        descending: bool,
+    ) -> Result<BeatmapsetSearchResult, WorkerError> {
+        let seed = json!({
+            "beatmapsets": [],
+            "cursor_string": cursor_string,
+            "search": {
+                "status": "any",
+                "video": false,
+                "storyboard": false,
+                "recommended": false,
+                "converts": false,
+                "follows": false,
+                "spotlights": false,
+                "featured_artists": false,
+                "nsfw": true,
+                "_sort": "updated",
+                "descending": descending
+            },
+            "total": 0
+        });
+
+        let seed_bytes = serde_json::to_vec(&seed)
+            .map_err(|err| WorkerError::Config(format!("invalid beatmapset search seed: {err}")))?;
+
+        let seed: BeatmapsetSearchResult = serde_json::from_slice(&seed_bytes)
+            .map_err(|err| WorkerError::Config(format!("invalid beatmapset search seed: {err}")))?;
+
+        let mut attempt = 0u32;
+        let mut delay = Duration::from_millis(500);
+
+        loop {
+            self.throttle.acquire().await;
+            match seed.get_next(&self.osu).await {
+                None => {
+                    return Err(WorkerError::Config(
+                        "beatmapset search cursor has no next page".to_string(),
+                    ));
+                }
+                Some(Ok(next)) => return Ok(next),
+                Some(Err(err)) => {
+                    attempt += 1;
+                    if attempt >= 5 {
+                        return Err(err.into());
+                    }
+                    self.inc_retry().await;
+                    tracing::warn!("osu retry a{} {}", attempt, err);
+                    sleep(delay).await;
+                    delay = delay.saturating_mul(2);
+                }
+            }
+        }
     }
 
     pub async fn beatmapset_search_next(
@@ -94,22 +171,12 @@ impl OsuClient {
     pub async fn beatmapset_search_resume(
         &self,
         page_index: u32,
+        descending: bool,
     ) -> Result<BeatmapsetSearchResult, WorkerError> {
-        let mut result = self.beatmapset_search_start().await?;
-
-        let mut skipped: u32 = 0;
-        while skipped < page_index {
-            if !result.has_more() {
-                break;
-            }
-            let Some(next) = self.beatmapset_search_next(&result).await? else {
-                break;
-            };
-            result = next;
-            skipped += 1;
+        match page_index {
+            0 => self.beatmapset_search_start(descending).await,
+            n => self.beatmapset_search_page(n, descending).await,
         }
-
-        Ok(result)
     }
 
     pub async fn users<I>(&self, user_ids: I) -> Result<Vec<User>, WorkerError>

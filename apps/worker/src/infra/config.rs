@@ -5,12 +5,14 @@ pub struct WorkerConfig {
     pub database_url: String,
     pub enrich_beatmapsets: bool,
     pub enrich_users: bool,
+    pub discovery_oldest_first: bool,
     pub osu_client_id: u64,
     pub osu_client_secret: String,
     pub page_delay_ms: u64,
     pub max_pages: Option<u32>,
     pub batch_size: usize,
     pub force_rescan: bool,
+    pub resume_from_checkpoint: bool,
     pub run_discovery: bool,
 }
 
@@ -37,6 +39,11 @@ impl WorkerConfig {
             .ok()
             .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
             .unwrap_or(true);
+
+        let discovery_oldest_first = std::env::var("SCAN_OLDEST_FIRST")
+            .ok()
+            .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
+            .unwrap_or(false);
 
         let osu_client_id = std::env::var("OSU_CLIENT_ID")
             .map_err(|_| "OSU_CLIENT_ID is required".to_string())?
@@ -65,6 +72,11 @@ impl WorkerConfig {
             .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
             .unwrap_or(false);
 
+        let resume_from_checkpoint = std::env::var("SCAN_RESUME_FROM_CHECKPOINT")
+            .ok()
+            .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
+            .unwrap_or(true);
+
         let run_discovery = std::env::var("RUN_DISCOVERY")
             .ok()
             .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
@@ -76,12 +88,14 @@ impl WorkerConfig {
             database_url,
             enrich_beatmapsets,
             enrich_users,
+            discovery_oldest_first,
             osu_client_id,
             osu_client_secret,
             page_delay_ms,
             max_pages,
             batch_size,
             force_rescan,
+            resume_from_checkpoint,
             run_discovery,
         })
     }

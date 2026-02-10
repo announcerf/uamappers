@@ -5,6 +5,14 @@ use crate::features::ingest::osu_client::OsuClient;
 use crate::infra::config::WorkerConfig;
 
 pub(crate) const SCAN_NAME: &str = "mapper_discovery";
+pub(crate) const SCAN_NAME_OLDEST: &str = "mapper_discovery_oldest";
+
+#[derive(Clone, Debug)]
+pub(crate) enum DiscoveryResume {
+    Start,
+    Page(u32),
+    Cursor(String),
+}
 
 pub struct MapperDiscovery {
     pub(crate) osu_client: OsuClient,
@@ -25,6 +33,13 @@ impl MapperDiscovery {
             config,
             scan_state_repo,
             ua_mappers_repo,
+        }
+    }
+
+    pub(crate) fn scan_name(&self) -> &'static str {
+        match self.config.discovery_oldest_first {
+            true => SCAN_NAME_OLDEST,
+            false => SCAN_NAME,
         }
     }
 }

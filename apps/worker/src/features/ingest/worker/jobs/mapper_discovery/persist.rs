@@ -2,13 +2,24 @@ use sea_orm::TransactionTrait;
 
 use crate::shared::errors::WorkerError;
 
-use super::types::{MapperDiscovery, SCAN_NAME};
+use super::types::{DiscoveryResume, MapperDiscovery};
+
+impl DiscoveryResume {
+    pub(crate) fn page_index(&self) -> u32 {
+        match self {
+            Self::Start => 0,
+            Self::Page(value) => *value,
+            Self::Cursor(_) => 0,
+        }
+    }
+}
 
 impl MapperDiscovery {
     pub(crate) async fn persist_page(
         &self,
         ua_users: Vec<(i64, String, String)>,
         cursor: Option<String>,
+        save_checkpoint: bool,
         page_index: u32,
     ) -> Result<(), WorkerError> {
         let txn = self.ua_mappers_repo.db().begin().await?;
@@ -19,41 +30,61 @@ impl MapperDiscovery {
                 .await?;
         }
 
-        self.scan_state_repo
-            .upsert_cursor_with(&txn, SCAN_NAME, cursor)
-            .await?;
+        if save_checkpoint {
+            self.scan_state_repo
+                .upsert_cursor_with(&txn, self.scan_name(), cursor)
+                .await?;
+        }
 
         txn.commit().await?;
 
-        tracing::debug!(job = SCAN_NAME, page_index, "persisted discovery page");
+        tracing::debug!(
+            job = self.scan_name(),
+            page_index,
+            "persisted discovery page"
+        );
         Ok(())
     }
 
-    pub(crate) async fn load_resume_page(&self) -> Result<u32, WorkerError> {
-        let Some(state) = self.scan_state_repo.get_by_name(SCAN_NAME).await? else {
-            return Ok(0);
+    pub(crate) async fn load_resume(&self) -> Result<DiscoveryResume, WorkerError> {
+        if self.config.discovery_oldest_first {
+            return Ok(DiscoveryResume::Start);
+        }
+        if !self.config.resume_from_checkpoint {
+            return Ok(DiscoveryResume::Start);
+        }
+
+        let Some(state) = self.scan_state_repo.get_by_name(self.scan_name()).await? else {
+            return Ok(DiscoveryResume::Start);
         };
 
         let Some(cursor) = state.cursor else {
-            return Ok(0);
+            return Ok(DiscoveryResume::Start);
         };
 
-        let Some(value) = cursor.strip_prefix("page:") else {
-            return Ok(0);
-        };
+        let cursor = cursor.trim().to_string();
+        if cursor.is_empty() {
+            return Ok(DiscoveryResume::Start);
+        }
 
-        Ok(value.parse::<u32>().unwrap_or(0))
+        match cursor.strip_prefix("cursor:") {
+            Some(value) if !value.is_empty() => Ok(DiscoveryResume::Cursor(value.to_string())),
+            _ => match cursor.strip_prefix("page:") {
+                Some(value) => Ok(DiscoveryResume::Page(value.parse::<u32>().unwrap_or(0))),
+                None => Ok(DiscoveryResume::Cursor(cursor)),
+            },
+        }
     }
 
     pub(crate) async fn record_failure(&self) -> Result<(), WorkerError> {
-        let state = self.scan_state_repo.get_by_name(SCAN_NAME).await?;
+        let state = self.scan_state_repo.get_by_name(self.scan_name()).await?;
         let retry_count = state.map(|s| s.retry_count).unwrap_or(0) + 1;
 
         let backoff_seconds: i64 = 30 * 2_i64.saturating_pow(retry_count.clamp(0, 10) as u32);
         let next_retry_at = chrono::Utc::now() + chrono::Duration::seconds(backoff_seconds);
 
         self.scan_state_repo
-            .mark_error(SCAN_NAME, retry_count, Some(next_retry_at))
+            .mark_error(self.scan_name(), retry_count, Some(next_retry_at))
             .await?;
 
         Ok(())
