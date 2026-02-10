@@ -105,7 +105,10 @@ impl OsuClient {
             "total": 0
         });
 
-        let seed: BeatmapsetSearchResult = serde_json::from_value(seed)
+        let seed_bytes = serde_json::to_vec(&seed)
+            .map_err(|err| WorkerError::Config(format!("invalid beatmapset search seed: {err}")))?;
+
+        let seed: BeatmapsetSearchResult = serde_json::from_slice(&seed_bytes)
             .map_err(|err| WorkerError::Config(format!("invalid beatmapset search seed: {err}")))?;
 
         let mut attempt = 0u32;
