@@ -69,13 +69,14 @@ impl OsuClient {
         &self,
         page_index: u32,
     ) -> Result<BeatmapsetSearchResult, WorkerError> {
+        let page = page_index.saturating_add(1);
         self.retry(|| {
             self.osu
                 .beatmapset_search()
                 .status(None)
                 .nsfw(true)
                 .sort(BeatmapsetSearchSort::LastUpdate, true)
-                .page(page_index)
+                .page(page)
         })
         .await
     }
