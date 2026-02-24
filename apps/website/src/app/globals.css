@@ -14,6 +14,8 @@
   --accent-purple: #8b5af2;
   --accent-muted-purple: #8e7ab8;
   --accent-aqua: #75fbfd;
+
+  --font-kyiv-type: var(--font-kyiv-type);
 }
 
 @theme inline {
@@ -30,10 +32,12 @@
   --color-accent-purple: var(--accent-purple);
   --color-accent-muted-purple: var(--accent-muted-purple);
   --color-accent-aqua: var(--accent-aqua);
+
+  --font-kyiv-type: var(--font-kyiv-type);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-kyiv-type), Arial, Helvetica, sans-serif;
 }
