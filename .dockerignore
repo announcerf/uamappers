@@ -1,0 +1,14 @@
+.git
+.github
+.idea
+target
+backups
+node_modules
+apps/web/node_modules
+apps/web/dist
+apps/web/.astro
+infra/env/**/app.env
+infra/terraform/.terraform
+infra/terraform/**/*.tfstate
+infra/terraform/**/*.tfstate.*
+**/*.log
