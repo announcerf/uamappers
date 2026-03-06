@@ -23,14 +23,39 @@ clippy:
 [doc("Run all tests in the workspace")]
 test:
 	cargo test --workspace --all-features --all-targets
+	bun run web:test
+
+[doc("Run tests only for the API crate")]
+test-api:
+	cargo test -p uamappers-api --all-features --all-targets
+
+[doc("Run tests only for the web workspace")]
+test-web:
+	bun run web:test
+
+[doc("Run tests only for the worker crate")]
+test-worker:
+	cargo test -p uamappers-worker --all-features --all-targets
 
 [doc("Fast compile check for the workspace")]
 check:
 	cargo check --workspace --all-features --all-targets
+	bun run lint
+	bun run typecheck
+	bun run web:test
+	bun run format:check
 
 [doc("Install Bun workspace dependencies")]
 install:
 	bun install --frozen-lockfile
+
+[doc("Run frontend lint checks (Astro + Vue)")]
+lint:
+	bun run lint
+
+[doc("Run frontend type checks")]
+typecheck:
+	bun run typecheck
 
 [doc("Run the API locally (no docker)")]
 api-dev:
