@@ -1,0 +1,13 @@
+{
+  "name": "uamappers",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "setup": "bun install --frozen-lockfile",
+    "web:dev": "bun run --cwd apps/web dev",
+    "web:build": "bun run --cwd apps/web build",
+    "web:typecheck": "bun run --cwd apps/web typecheck"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@uamappers/web",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/vue": "^5.1.2",
+    "astro": "^5.17.1",
+    "vue": "^3.5.22"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.9.3"
+  }
+}
