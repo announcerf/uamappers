@@ -1,0 +1,5 @@
+vps_host         = "203.0.113.10"
+vps_port         = 22
+vps_user         = "deploy"
+private_key_path = "~/.ssh/id_ed25519"
+layout_version   = "v1"

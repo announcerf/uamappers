@@ -1,0 +1,19 @@
+services:
+  worker:
+    image: ${UAMAPPERS_WORKER_IMAGE:?UAMAPPERS_WORKER_IMAGE is required}
+    restart: "no"
+    env_file:
+      - app.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    mem_limit: 1024m
+    cpus: 1.00
+    pids_limit: 256
+
+networks:
+  internal:
+    name: uamappers-prod-internal
+    external: true

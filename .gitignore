@@ -10,12 +10,19 @@
 .env
 .env.*
 !.env.example
+infra/env/**/app.env
 
 # OS
 .DS_Store
 
 # Logs
 *.log
+
+# JS
+node_modules/
+apps/*/node_modules/
+apps/web/.astro/
+apps/web/dist/
 
 # Backups
 backups/
@@ -26,3 +33,10 @@ backups/
 
 # Docker
 .docker/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
