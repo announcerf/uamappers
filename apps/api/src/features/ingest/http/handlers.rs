@@ -1,27 +1,18 @@
-use axum::{extract::State, Json};
+use axum::{Json, extract::State};
 
-use crate::{app::state::AppState, shared::errors::ApiError};
+use crate::{app::state::AppState, features::ingest::usecases, shared::errors::ApiError};
 
 use super::dto::{IngestStatusDtoV1, ScanStateDtoV1};
 
-#[utoipa::path(
-    get,
-    path = "/ingest/status",
-    tag = "Ingest::Status",
-    summary = "Get ingest scan status",
-    responses(
-        (status = 200, description = "Current ingest status", body = IngestStatusDtoV1),
-        (status = 500, description = "Internal error", body = crate::shared::errors::ErrorResponse)
-    ),
-    operation_id = "ingest_status_v1"
-)]
 pub async fn get_status(
     State(state): State<AppState>,
 ) -> Result<Json<IngestStatusDtoV1>, ApiError> {
-    let rows = state.scan_state_repo.list_all().await.map_err(|err| {
-        tracing::error!(error = ?err, "failed to load ingest status");
-        ApiError::internal("ingest_status_failed", "Failed to load ingest status")
-    })?;
+    let rows = usecases::list_scan_states(&state.scan_state_repo)
+        .await
+        .map_err(|err| {
+            tracing::error!(error = ?err, "failed to load ingest status");
+            ApiError::internal("ingest_status_failed", "Failed to load ingest status")
+        })?;
 
     let states = rows
         .into_iter()

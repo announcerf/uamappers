@@ -1,8 +1,8 @@
-use crate::shared::errors::{response::FieldError, ErrorResponse};
+use crate::shared::errors::{ErrorResponse, response::FieldError};
 use axum::{
+    Json,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
 
 #[derive(Debug)]

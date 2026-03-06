@@ -1,5 +1,3 @@
-use sea_orm::DatabaseConnection;
-
 use crate::features::{
     ingest::storage::repo::ScanStateRepo,
     mappers::storage::{
@@ -10,7 +8,6 @@ use crate::features::{
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: DatabaseConnection,
     pub beatmapsets_repo: BeatmapsetRepo,
     pub osu_user_beatmapsets_repo: OsuUserBeatmapsetRepo,
     pub osu_users_repo: OsuUserRepo,
@@ -19,14 +16,13 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(db: DatabaseConnection) -> Self {
+    pub fn new(db: sea_orm::DatabaseConnection) -> Self {
         Self {
             beatmapsets_repo: BeatmapsetRepo::new(db.clone()),
             osu_user_beatmapsets_repo: OsuUserBeatmapsetRepo::new(db.clone()),
             osu_users_repo: OsuUserRepo::new(db.clone()),
             scan_state_repo: ScanStateRepo::new(db.clone()),
             ua_mappers_repo: UaMapperRepo::new(db.clone()),
-            db,
         }
     }
 }
