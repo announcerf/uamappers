@@ -5,42 +5,40 @@ on:
     branches: [main]
     paths-ignore:
       - "**/*.md"
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
 
 jobs:
-  release:
-    name: Release Build
+  rust-tests:
+    name: Rust Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.93.0
-      - uses: Swatinem/rust-cache@v2
-      - name: cargo build --release
-        run: cargo build --workspace --release
-
-  tests:
-    name: Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.93.0
       - uses: Swatinem/rust-cache@v2
       - name: cargo test
         run: cargo test --workspace --all-features --all-targets
 
-  clippy:
-    name: Clippy
+  rust-clippy:
+    name: Rust Clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.93.0
           components: clippy
       - uses: Swatinem/rust-cache@v2
       - name: cargo clippy
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
+  web-typecheck:
+    name: Web Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: bun install
+        run: bun install --frozen-lockfile
+      - name: bun run typecheck
+        run: bun run --cwd apps/web typecheck
