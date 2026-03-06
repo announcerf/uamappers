@@ -6,4 +6,4 @@ export type {
   SeparatorSize,
 } from '@/shared/ui/separator/model/types';
 export { separatorVariants } from '@/shared/ui/separator/lib/variants';
-export { useSeparator } from '@/shared/ui/separator/model/use-separator';
+export { useSeparator } from '@/shared/ui/separator/model/useSeparator';
