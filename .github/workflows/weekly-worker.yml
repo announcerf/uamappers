@@ -1,0 +1,85 @@
+name: Weekly Worker
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run-weekly-worker:
+    name: Run worker one-off on VPS
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate production environment secrets
+        env:
+          PROD_VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
+          PROD_VPS_PORT: ${{ secrets.PROD_VPS_PORT }}
+          PROD_VPS_USER: ${{ secrets.PROD_VPS_USER }}
+          PROD_VPS_SSH_KEY: ${{ secrets.PROD_VPS_SSH_KEY }}
+          PROD_GHCR_PULL_USER: ${{ secrets.PROD_GHCR_PULL_USER }}
+          PROD_GHCR_PULL_TOKEN: ${{ secrets.PROD_GHCR_PULL_TOKEN }}
+        run: |
+          : "${PROD_VPS_HOST:?production secret PROD_VPS_HOST is required}"
+          : "${PROD_VPS_USER:?production secret PROD_VPS_USER is required}"
+          : "${PROD_VPS_SSH_KEY:?production secret PROD_VPS_SSH_KEY is required}"
+          : "${PROD_GHCR_PULL_USER:?production secret PROD_GHCR_PULL_USER is required}"
+          : "${PROD_GHCR_PULL_TOKEN:?production secret PROD_GHCR_PULL_TOKEN is required}"
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
+          VPS_PORT: ${{ secrets.PROD_VPS_PORT }}
+          VPS_USER: ${{ secrets.PROD_VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.PROD_VPS_SSH_KEY }}
+        run: |
+          VPS_PORT="${VPS_PORT:-22}"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Ensure prod directory on VPS
+        env:
+          VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
+          VPS_PORT: ${{ secrets.PROD_VPS_PORT }}
+          VPS_USER: ${{ secrets.PROD_VPS_USER }}
+          STACK_DIR: ${{ vars.UAMAPPERS_STACK_DIR || '/opt/uamappers/prod' }}
+        run: |
+          VPS_PORT="${VPS_PORT:-22}"
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "mkdir -p '$STACK_DIR'"
+      - name: Sync worker deploy files
+        env:
+          VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
+          VPS_PORT: ${{ secrets.PROD_VPS_PORT }}
+          VPS_USER: ${{ secrets.PROD_VPS_USER }}
+          STACK_DIR: ${{ vars.UAMAPPERS_STACK_DIR || '/opt/uamappers/prod' }}
+        run: |
+          VPS_PORT="${VPS_PORT:-22}"
+          scp -P "$VPS_PORT" infra/compose/prod/compose.yml "$VPS_USER@$VPS_HOST:$STACK_DIR/compose.yml"
+          scp -P "$VPS_PORT" infra/compose/prod/compose.worker.yml "$VPS_USER@$VPS_HOST:$STACK_DIR/compose.worker.yml"
+          scp -P "$VPS_PORT" scripts/run_weekly_worker.sh "$VPS_USER@$VPS_HOST:$STACK_DIR/run_weekly_worker.sh"
+      - name: Run worker script
+        env:
+          VPS_HOST: ${{ secrets.PROD_VPS_HOST }}
+          VPS_PORT: ${{ secrets.PROD_VPS_PORT }}
+          VPS_USER: ${{ secrets.PROD_VPS_USER }}
+          GHCR_PULL_USER: ${{ secrets.PROD_GHCR_PULL_USER }}
+          GHCR_PULL_TOKEN: ${{ secrets.PROD_GHCR_PULL_TOKEN }}
+          OWNER_LC: ${{ github.repository_owner }}
+          UAMAPPERS_WORKER_IMAGE_OVERRIDE: ${{ vars.UAMAPPERS_WORKER_IMAGE }}
+          STACK_DIR: ${{ vars.UAMAPPERS_STACK_DIR || '/opt/uamappers/prod' }}
+        run: |
+          VPS_PORT="${VPS_PORT:-22}"
+          OWNER_LC_LC=$(printf '%s' "$OWNER_LC" | tr '[:upper:]' '[:lower:]')
+          WORKER_IMAGE="${UAMAPPERS_WORKER_IMAGE_OVERRIDE:-ghcr.io/$OWNER_LC_LC/uamappers-worker:latest}"
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
+            "set -eu; \
+            cd '$STACK_DIR'; \
+            chmod +x run_weekly_worker.sh; \
+            echo '$GHCR_PULL_TOKEN' | docker login ghcr.io -u '$GHCR_PULL_USER' --password-stdin; \
+            UAMAPPERS_WORKER_IMAGE=$WORKER_IMAGE \
+            STACK_DIR='$STACK_DIR' \
+            COMPOSE_PROJECT_NAME=uamappers-prod \
+            ./run_weekly_worker.sh"
