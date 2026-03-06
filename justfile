@@ -1,81 +1,68 @@
-set dotenv-load := true
-
 project := "uamappers"
+dev_env := "infra/env/dev/app.env"
+dev_compose := "infra/compose/dev/compose.yml"
 
-# Aliases
-alias backups := backup-list
-alias docker-clean := nuke
+[doc("Show available commands")]
+help:
+	just --list --unsorted
 
-# Run clippy for the whole workspace (fail on warnings).
+[doc("Local preflight (env files, docker daemon, required tools)")]
+preflight:
+	@test -f {{dev_env}} || (echo "Missing {{dev_env}}. Copy infra/env/dev/app.env.example first." && exit 1)
+	@command -v docker >/dev/null || (echo "docker not found" && exit 1)
+	@docker compose version >/dev/null 2>&1 || (echo "docker compose plugin not available" && exit 1)
+	@docker info >/dev/null 2>&1 || (echo "docker daemon is not running" && exit 1)
+	@command -v cargo >/dev/null || (echo "cargo not found" && exit 1)
+	@command -v bun >/dev/null || (echo "bun not found" && exit 1)
+	@echo "Preflight OK"
+
+[doc("Run clippy for the whole workspace (fail on warnings)")]
 clippy:
 	cargo clippy --workspace --all-targets --all-features -- -D warnings
 
-# Run all tests in the workspace.
+[doc("Run all tests in the workspace")]
 test:
 	cargo test --workspace --all-features --all-targets
 
-# Fast compile check for the workspace.
+[doc("Fast compile check for the workspace")]
 check:
 	cargo check --workspace --all-features --all-targets
 
-# API-only cargo check.
-api-check:
-	(cd apps/api && cargo check --all-features --all-targets)
+[doc("Install Bun workspace dependencies")]
+install:
+	bun install --frozen-lockfile
 
-# API-only clippy (fail on warnings).
-api-clippy:
-	(cd apps/api && cargo clippy --all-targets --all-features -- -D warnings)
+[doc("Run the API locally (no docker)")]
+api-dev:
+	set -a; . {{dev_env}}; set +a; cargo run -p uamappers-api
 
-# API-only tests.
-api-test:
-	(cd apps/api && cargo test --all-features --all-targets)
+[doc("Run the web frontend locally with Bun (no docker)")]
+web-dev:
+	bun run --cwd apps/web dev
 
-# Run the API locally (no docker).
-api-run:
-	cargo run -p uamappers-api
-
-# Worker-only cargo check.
-worker-check:
-	(cd apps/worker && cargo check --all-features --all-targets)
-
-# Worker-only clippy (fail on warnings).
-worker-clippy:
-	(cd apps/worker && cargo clippy --all-targets --all-features -- -D warnings)
-
-# Worker-only tests.
-worker-test:
-	(cd apps/worker && cargo test --all-features --all-targets)
-
-# Run the worker locally (no docker).
-worker-run-local:
-	cargo run -p uamappers-worker
-
-# Start Postgres + API via docker compose (worker is not started by default).
+[doc("Start local dev stack via Docker (postgres + api + web)")]
 up:
-	docker compose -p {{project}} up -d
+	docker compose -f {{dev_compose}} -p {{project}} up -d
 
-# Stop containers started by `just up`.
+[doc("Stop local dev stack")]
 down:
-	docker compose -p {{project}} down
+	docker compose -f {{dev_compose}} -p {{project}} down
 
-# Rebuild images without cache.
+[doc("Rebuild local dev stack without cache")]
 rebuild:
-	docker compose -p {{project}} build --no-cache
+	docker compose -f {{dev_compose}} -p {{project}} down
+	docker compose -f {{dev_compose}} -p {{project}} build --no-cache
+	docker compose -f {{dev_compose}} -p {{project}} up -d
 
-# Restart docker services (down -> rebuild -> up).
-reup:
-	docker compose -p {{project}} down
-	docker compose -p {{project}} build --no-cache
-	docker compose -p {{project}} up -d
-
-# Delete all docker resources for this project (DB data included).
+[doc("Delete all local docker resources for this project (DB data included)")]
 nuke:
-	./scripts/docker_clean.sh {{project}}
+	docker compose -f {{dev_compose}} -p {{project}} down --remove-orphans --volumes --rmi local || true
 
-# Apply SQL migrations from `apps/api/migrations` to the docker Postgres.
+[doc("Apply SeaORM migrations to local docker Postgres")]
 migrate:
-	@i=0; \
-	until docker compose -p {{project}} exec -T postgres pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; do \
+	@set -a; . {{dev_env}}; set +a; \
+	i=0; \
+	until docker compose -f {{dev_compose}} -p {{project}} exec -T postgres pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; do \
 		i=$((i+1)); \
 		if [ $i -ge 30 ]; then \
 			echo "postgres is not ready"; \
@@ -83,65 +70,33 @@ migrate:
 		fi; \
 		sleep 1; \
 	done
-	@find apps/api/migrations -maxdepth 1 -name '*.sql' -print | sort | while read -r f; do \
-		echo "Applying $f"; \
-		docker compose -p {{project}} exec -T postgres psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$f"; \
-	done
+	docker compose -f {{dev_compose}} -p {{project}} run --rm migrator up
 
-# Apply SQL migrations from `apps/api/migrations` to a local Postgres (no docker).
-migrate-local:
-	@PGPASSWORD="$POSTGRES_PASSWORD" pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"
-	@find apps/api/migrations -maxdepth 1 -name '*.sql' -print | sort | while read -r f; do \
-		echo "Applying $f"; \
-		PGPASSWORD="$POSTGRES_PASSWORD" psql -v ON_ERROR_STOP=1 -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" < "$f"; \
-	done
-
-# Open a psql shell inside the postgres container.
+[doc("Open a psql shell inside the postgres container")]
 psql:
-	docker compose -p {{project}} exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+	@set -a; . {{dev_env}}; set +a; docker compose -f {{dev_compose}} -p {{project}} exec postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 
-# Open a psql shell to a local Postgres (no docker).
-psql-local:
-	PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"
-
-# Start the worker container (manual profile).
+[doc("Start the worker container (manual profile)")]
 worker-run: up migrate
-	docker compose -p {{project}} --profile worker up -d worker
+	docker compose -f {{dev_compose}} -p {{project}} --profile worker up -d worker
 
-# Stop the worker container if it's running.
+[doc("Stop the worker container if it's running")]
 worker-stop:
-	docker compose -p {{project}} --profile worker stop worker || true
-	docker compose -p {{project}} --profile worker rm -f worker || true
+	docker compose -f {{dev_compose}} -p {{project}} --profile worker stop worker || true
+	docker compose -f {{dev_compose}} -p {{project}} --profile worker rm -f worker || true
 
-# Tail worker logs.
-worker-logs:
-	docker compose -p {{project}} --profile worker logs -f worker
+[doc("Create a DB dump into backups. Modes: full | schema | data")]
+backup mode="full":
+	./scripts/db_backup.sh {{project}} {{mode}}
 
-# Rebuild the worker image and recreate the container.
-worker-rebuild:
-	docker compose -p {{project}} --profile worker build --no-cache worker
-	docker compose -p {{project}} --profile worker up -d --force-recreate worker
+[doc("List available DB backups")]
+backups:
+	@if [ ! -d backups ]; then \
+		echo "No backups/ directory"; \
+	else \
+		ls -1 backups | sort; \
+	fi
 
-# Create a full DB dump into `./backups`.
-backup:
-	./scripts/db_backup.sh {{project}} full
-
-# Create a schema-only dump into `./backups`.
-backup-schema:
-	./scripts/db_backup.sh {{project}} schema
-
-# Create a data-only dump into `./backups`.
-backup-data:
-	./scripts/db_backup.sh {{project}} data
-
-# List available DB backups.
-backup-list:
-	./scripts/db_backup_list.sh
-
-# Restore a dump file into the DB.
-restore dump:
-	./scripts/db_restore.sh {{project}} {{dump}} inplace
-
-# Restore a dump file after dropping existing objects (destructive).
-restore-clean dump:
-	./scripts/db_restore.sh {{project}} {{dump}} clean
+[doc("Restore a dump file. Modes: inplace | clean")]
+restore dump mode="inplace":
+	./scripts/db_restore.sh {{project}} {{dump}} {{mode}}
