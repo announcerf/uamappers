@@ -67,7 +67,12 @@ impl MapperEnrich {
 
                 if progress_every > 0 && users_processed.is_multiple_of(progress_every) {
                     let elapsed = started_at.elapsed();
-                    tracing::info!("users n{} last{} {}s", users_processed, last_id, elapsed.as_secs());
+                    tracing::info!(
+                        "users n{} last{} {}s",
+                        users_processed,
+                        last_id,
+                        elapsed.as_secs()
+                    );
                 }
             }
         }

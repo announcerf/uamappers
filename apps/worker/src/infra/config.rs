@@ -28,7 +28,7 @@ impl WorkerConfig {
             .and_then(|value| value.parse::<u64>().ok())
             .unwrap_or(25);
 
-        let database_url = uamappers_api::shared::db_url::build_database_url();
+        let database_url = uamappers_api::shared::db_url::build_database_url()?;
 
         let enrich_beatmapsets = std::env::var("ENRICH_BEATMAPSETS")
             .ok()

@@ -3,7 +3,7 @@ use sea_orm::TransactionTrait;
 use crate::shared::errors::WorkerError;
 
 use super::cursor::{format_beatmapsets_cursor, format_last_id_cursor};
-use super::types::{MapperEnrich, BEATMAPSETS_SCAN_NAME, USERS_SCAN_NAME};
+use super::types::{BEATMAPSETS_SCAN_NAME, MapperEnrich, USERS_SCAN_NAME};
 
 impl MapperEnrich {
     pub(crate) async fn persist_user_profile(
