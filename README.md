@@ -1,46 +1,52 @@
-# uamappers
+# UAMappers
 
-esu nyan?
+- `apps/api` — Rust HTTP API
+- `apps/web` — Astro + Vue + TypeScript frontend
+- `apps/worker` — background crawler/enrichment worker
 
-## Backend
+## TL;DR
 
-- **API**: Rust HTTP API with OpenAPI/Swagger, backed by PostgreSQL.
-- **Worker**: Rust crawler that discovers Ukrainian mappers and refreshes cached data.
+```bash
+cp infra/env/dev/app.env.example infra/env/dev/app.env
+just preflight
+just install
+just up
+just migrate
+```
 
-### Local dev (Docker)
+## Local Development
 
-1. Copy `.env.example` to `.env` and fill in values (minimum: `OSU_CLIENT_ID`, `OSU_CLIENT_SECRET`, `POSTGRES_PASSWORD`).
-2. Start Postgres + API:
-   - `just up`
-   - API: `http://localhost:8080`
-   - Swagger UI: `http://localhost:8080/swagger-ui`
-   - OpenAPI JSON: `http://localhost:8080/api-docs/openapi.json`
-3. Apply DB schema:
-   - `just migrate`
-4. Run the worker manually (not auto-started by default):
-   - `just worker-run`
-   - `just worker-logs`
-   - `just worker-stop`
+Docker-first:
 
-### Local dev (No Docker)
+```bash
+just up
+just migrate
+just down
+```
 
-Prereqs:
-- PostgreSQL running locally
-- `psql` available on PATH
+Local endpoints:
 
-1. Copy `.env.example` to `.env` and set:
-   - `POSTGRES_HOST=localhost`
-   - `POSTGRES_PORT=5432`
-   - `POSTGRES_USER=...`
-   - `POSTGRES_PASSWORD=...`
-   - `POSTGRES_DB=uamappers`
-2. Apply DB schema:
-   - `just migrate-local`
-3. Run API:
-   - `just api-run`
-   - Swagger UI: `http://localhost:8080/swagger-ui`
-4. Run worker (foreground):
-   - `just worker-run-local`
+- API: `http://127.0.0.1:8080`
+- Web: `http://127.0.0.1:3000`
+
+Optional non-Docker runs:
+
+```bash
+just api-dev
+just web-dev
+```
+
+## Worker
+
+- Local manual run: `just worker-run`
+- Local stop: `just worker-stop`
+- Production schedule: weekly (Monday) via CI workflow
+
+## Commands
+
+```bash
+just help
+```
 
 ## License
 
