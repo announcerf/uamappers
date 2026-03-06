@@ -20,7 +20,7 @@ fn set_var(name: &str, value: Option<&str>) {
 }
 
 #[test]
-fn build_database_url_uses_defaults_when_env_missing() {
+fn build_database_url_errors_when_env_missing() {
     with_env_lock(|| {
         let prev = [
             ("POSTGRES_HOST", std::env::var("POSTGRES_HOST").ok()),
@@ -36,8 +36,9 @@ fn build_database_url_uses_defaults_when_env_missing() {
         set_var("POSTGRES_PASSWORD", None);
         set_var("POSTGRES_DB", None);
 
-        let url = uamappers_api::shared::db_url::build_database_url();
-        assert_eq!(url, "postgres://postgres:postgres@localhost:5432/uamappers");
+        let err = uamappers_api::shared::db_url::build_database_url()
+            .expect_err("db url build must fail when env vars are missing");
+        assert_eq!(err, "POSTGRES_HOST is required");
 
         for (k, v) in prev {
             set_var(k, v.as_deref());
@@ -62,7 +63,8 @@ fn build_database_url_uses_env_values() {
         set_var("POSTGRES_PASSWORD", Some("secret"));
         set_var("POSTGRES_DB", Some("db"));
 
-        let url = uamappers_api::shared::db_url::build_database_url();
+        let url = uamappers_api::shared::db_url::build_database_url()
+            .expect("db url build must succeed with full env");
         assert_eq!(url, "postgres://app:secret@postgres:6432/db");
 
         for (k, v) in prev {

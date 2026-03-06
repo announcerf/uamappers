@@ -12,14 +12,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let config = AppConfig::load();
+    let config = AppConfig::load().map_err(std::io::Error::other)?;
     let db = db::connect(&config.database_url).await?;
     let state = AppState::new(db);
 
-    let app = router::build(state);
+    let app = router::build(state, &config);
     let listener = tokio::net::TcpListener::bind(&config.api_bind).await?;
 
-    tracing::info!(bind = %config.api_bind, "starting API server");
+    tracing::info!(
+        bind = %config.api_bind,
+        openapi = config.expose_openapi(),
+        "starting API server"
+    );
 
     axum::serve(listener, app).await?;
 

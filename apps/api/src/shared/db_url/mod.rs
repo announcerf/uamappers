@@ -1,9 +1,16 @@
-pub fn build_database_url() -> String {
-    let host = std::env::var("POSTGRES_HOST").unwrap_or_else(|_| "localhost".to_string());
-    let port = std::env::var("POSTGRES_PORT").unwrap_or_else(|_| "5432".to_string());
-    let user = std::env::var("POSTGRES_USER").unwrap_or_else(|_| "postgres".to_string());
-    let password = std::env::var("POSTGRES_PASSWORD").unwrap_or_else(|_| "postgres".to_string());
-    let db = std::env::var("POSTGRES_DB").unwrap_or_else(|_| "uamappers".to_string());
+fn required(name: &str) -> Result<String, String> {
+    std::env::var(name).map_err(|_| format!("{name} is required"))
+}
 
-    format!("postgres://{}:{}@{}:{}/{}", user, password, host, port, db)
+pub fn build_database_url() -> Result<String, String> {
+    let host = required("POSTGRES_HOST")?;
+    let port = required("POSTGRES_PORT")?;
+    let user = required("POSTGRES_USER")?;
+    let password = required("POSTGRES_PASSWORD")?;
+    let db = required("POSTGRES_DB")?;
+
+    Ok(format!(
+        "postgres://{}:{}@{}:{}/{}",
+        user, password, host, port, db
+    ))
 }
