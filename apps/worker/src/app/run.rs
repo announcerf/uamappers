@@ -1,132 +1,73 @@
-use rosu_v2::prelude::Osu;
-use tracing_subscriber::fmt::format::Writer;
-use tracing_subscriber::fmt::time::FormatTime;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use uamappers_api::{
-    features::{
-        ingest::storage::repo::ScanStateRepo,
-        mappers::storage::{
-            beatmapset_repo::BeatmapsetRepo, osu_user_beatmapset_repo::OsuUserBeatmapsetRepo,
-            osu_user_repo::OsuUserRepo, ua_mapper_repo::UaMapperRepo,
-        },
-    },
-    infra::db,
-};
-
 use crate::{
-    features::ingest::osu_client::OsuClient,
-    features::ingest::worker::jobs::{
-        mapper_discovery::MapperDiscovery, mapper_enrich::MapperEnrich,
-    },
+    app::bootstrap::{WorkerRuntime, build_runtime},
+    app::tracing::init_tracing,
     infra::config::WorkerConfig,
-    shared::errors::WorkerError,
+    shared::{errors::WorkerError, time::format_duration},
 };
-
-struct UtcRfc3339Millis;
-
-impl FormatTime for UtcRfc3339Millis {
-    fn format_time(&self, w: &mut Writer<'_>) -> std::fmt::Result {
-        let ts = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
-        w.write_str(&ts)
-    }
-}
-
-fn init_tracing() {
-    let mut filter = match tracing_subscriber::EnvFilter::try_from_default_env() {
-        Ok(filter) => filter,
-        Err(_) => tracing_subscriber::EnvFilter::new("info"),
-    };
-
-    let rust_log = std::env::var("RUST_LOG").unwrap_or_default();
-    if !rust_log.contains("sqlx=") {
-        filter = filter.add_directive("sqlx=warn".parse().expect("sqlx filter directive"));
-    }
-    if !rust_log.contains("sea_orm=") {
-        filter = filter.add_directive("sea_orm=warn".parse().expect("sea_orm filter directive"));
-    }
-
-    tracing_subscriber::registry()
-        .with(filter)
-        .with(
-            tracing_subscriber::fmt::layer()
-                .compact()
-                .with_timer(UtcRfc3339Millis)
-                .with_target(false)
-                .with_file(false)
-                .with_line_number(false)
-                .with_thread_names(false)
-                .with_thread_ids(false)
-                .with_ansi(true),
-        )
-        .init();
-}
 
 pub async fn run() -> Result<(), WorkerError> {
     init_tracing();
 
     let config = WorkerConfig::load().map_err(WorkerError::Config)?;
+    let runtime = build_runtime(config).await?;
+    let started_at = std::time::Instant::now();
 
-    let db = db::connect(&config.database_url).await?;
-    let osu = Osu::new(config.osu_client_id, config.osu_client_secret.clone()).await?;
-    let osu_client = OsuClient::new(osu);
-    let osu_client_stats = osu_client.clone();
-    osu_client.min_request_interval_ms();
+    log_start(&runtime);
+    run_jobs(&runtime).await?;
+    log_finish(&runtime, started_at).await;
+
+    Ok(())
+}
+
+fn log_start(runtime: &WorkerRuntime) {
+    runtime.osu_client_stats.min_request_interval_ms();
 
     tracing::info!(
         "start disc={} users={} beatmaps={}",
-        if config.run_discovery { "on" } else { "off" },
-        if config.enrich_users { "on" } else { "off" },
-        if config.enrich_beatmapsets { "on" } else { "off" }
+        if runtime.config.run_discovery {
+            "on"
+        } else {
+            "off"
+        },
+        if runtime.config.enrich_users {
+            "on"
+        } else {
+            "off"
+        },
+        if runtime.config.enrich_beatmapsets {
+            "on"
+        } else {
+            "off"
+        }
     );
+}
 
-    let ua_mappers_repo = UaMapperRepo::new(db.clone());
-    let osu_users_repo = OsuUserRepo::new(db.clone());
-    let beatmapsets_repo = BeatmapsetRepo::new(db.clone());
-    let scan_state_repo = ScanStateRepo::new(db.clone());
-    let osu_user_beatmapsets_repo = OsuUserBeatmapsetRepo::new(db.clone());
-
-    let discovery = MapperDiscovery::new(
-        osu_client.clone(),
-        config.clone(),
-        ua_mappers_repo.clone(),
-        scan_state_repo.clone(),
-    );
-
-    let enrich = MapperEnrich::new(
-        osu_client,
-        config.clone(),
-        ua_mappers_repo,
-        osu_users_repo,
-        beatmapsets_repo,
-        osu_user_beatmapsets_repo,
-        scan_state_repo,
-    );
-
-    let started_at = std::time::Instant::now();
-
-    if config.run_discovery {
-        discovery.run().await?;
+async fn run_jobs(runtime: &WorkerRuntime) -> Result<(), WorkerError> {
+    if runtime.config.run_discovery {
+        runtime.discovery.run().await?;
     } else {
         tracing::info!("discovery disabled");
     }
 
-    if config.enrich_users || config.enrich_beatmapsets {
-        enrich.run().await?;
+    if runtime.config.enrich_users || runtime.config.enrich_beatmapsets {
+        runtime.enrich.run().await?;
     } else {
         tracing::info!("enrich disabled");
     }
 
-    let elapsed = started_at.elapsed();
-    let _ = crate::shared::time::format_duration(elapsed);
-    let throttle = osu_client_stats.throttle_snapshot().await;
-    let _ = throttle.total_sleep_ms;
-    let stats = osu_client_stats.stats_snapshot().await;
-    tracing::info!(
-        "done {}s req{} retry={}",
-        elapsed.as_secs(),
-        throttle.acquires,
-        stats.retries
-    );
-
     Ok(())
+}
+
+async fn log_finish(runtime: &WorkerRuntime, started_at: std::time::Instant) {
+    let elapsed = started_at.elapsed();
+    let throttle = runtime.osu_client_stats.throttle_snapshot().await;
+    let stats = runtime.osu_client_stats.stats_snapshot().await;
+
+    tracing::info!(
+        duration = %format_duration(elapsed),
+        requests = throttle.acquires,
+        throttle_sleep_ms = throttle.total_sleep_ms,
+        retries = stats.retries,
+        "done"
+    );
 }
