@@ -6,8 +6,20 @@
   ],
   "scripts": {
     "setup": "bun install --frozen-lockfile",
+    "lint": "bun run --cwd apps/web lint",
+    "typecheck": "bun run --cwd apps/web typecheck",
+    "format:check": "prettier --check apps/web .prettierrc.json package.json",
+    "format:write": "prettier --write apps/web .prettierrc.json package.json",
     "web:dev": "bun run --cwd apps/web dev",
     "web:build": "bun run --cwd apps/web build",
-    "web:typecheck": "bun run --cwd apps/web typecheck"
+    "web:typecheck": "bun run --cwd apps/web typecheck",
+    "web:lint": "bun run --cwd apps/web lint",
+    "web:test": "bun run --cwd apps/web test"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "prettier": "^3.8.1",
+    "prettier-plugin-astro": "^0.14.1",
+    "prettier-plugin-tailwindcss": "^0.7.2"
   }
 }
