@@ -1,5 +1,5 @@
-use sea_orm::JsonValue;
 use sea_orm::entity::prelude::*;
+use sea_orm::JsonValue;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "osu_users")]

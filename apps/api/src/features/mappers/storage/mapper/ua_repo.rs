@@ -41,6 +41,10 @@ impl UaMapperRepo {
         Ok((rows, total))
     }
 
+    pub async fn count_all(&self) -> Result<u64, DbErr> {
+        ua_mapper::Entity::find().count(&self.db).await
+    }
+
     pub async fn list_after_id(
         &self,
         after_id: i64,
@@ -95,6 +99,31 @@ impl UaMapperRepo {
             .order_by_asc(ua_mapper::Column::OsuUserId)
             .limit(limit)
             .offset(offset)
+            .all(&self.db)
+            .await?;
+
+        Ok((rows, total))
+    }
+
+    pub async fn search_after_id(
+        &self,
+        query: &str,
+        after_id: Option<i64>,
+        limit: u64,
+    ) -> Result<(Vec<ua_mapper::Model>, u64), DbErr> {
+        let base = ua_mapper::Entity::find()
+            .filter(Expr::col(ua_mapper::Column::Username).ilike(format!("%{}%", query)));
+
+        let total = base.clone().count(&self.db).await?;
+
+        let base = match after_id {
+            Some(after_id) => base.filter(ua_mapper::Column::OsuUserId.gt(after_id)),
+            None => base,
+        };
+
+        let rows = base
+            .order_by_asc(ua_mapper::Column::OsuUserId)
+            .limit(limit)
             .all(&self.db)
             .await?;
 

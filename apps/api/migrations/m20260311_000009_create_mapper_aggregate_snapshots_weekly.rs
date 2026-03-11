@@ -1,0 +1,161 @@
+use sea_orm_migration::prelude::*;
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .create_table(
+                Table::create()
+                    .table(MapperAggregateSnapshotsWeekly::Table)
+                    .if_not_exists()
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::OsuUserId)
+                            .big_integer()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::SnapshotWeek)
+                            .timestamp_with_time_zone()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::TotalMapsets)
+                            .integer()
+                            .not_null()
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::RankedMapsets)
+                            .integer()
+                            .not_null()
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::LovedMapsets)
+                            .integer()
+                            .not_null()
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::GuestMapsets)
+                            .integer()
+                            .not_null()
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::NominatedMapsets)
+                            .integer()
+                            .not_null()
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::GraveyardMapsets)
+                            .integer()
+                            .not_null()
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::PendingMapsets)
+                            .integer()
+                            .not_null()
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::TotalPlaycount)
+                            .big_integer()
+                            .not_null()
+                            .default(0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::AvgRating)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::AvgStars)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::AvgBpm)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::AvgLengthSeconds)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::MainMode)
+                            .string()
+                            .not_null(),
+                    )
+                    .col(
+                        ColumnDef::new(MapperAggregateSnapshotsWeekly::UpdatedAt)
+                            .timestamp_with_time_zone()
+                            .not_null()
+                            .default(Expr::current_timestamp()),
+                    )
+                    .primary_key(
+                        Index::create()
+                            .col(MapperAggregateSnapshotsWeekly::OsuUserId)
+                            .col(MapperAggregateSnapshotsWeekly::SnapshotWeek),
+                    )
+                    .to_owned(),
+            )
+            .await?;
+
+        manager
+            .create_index(
+                Index::create()
+                    .name("idx_mapper_aggregate_snapshots_weekly_lookup")
+                    .table(MapperAggregateSnapshotsWeekly::Table)
+                    .if_not_exists()
+                    .col(MapperAggregateSnapshotsWeekly::SnapshotWeek)
+                    .to_owned(),
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .drop_table(
+                Table::drop()
+                    .table(MapperAggregateSnapshotsWeekly::Table)
+                    .if_exists()
+                    .to_owned(),
+            )
+            .await
+    }
+}
+
+#[derive(DeriveIden)]
+enum MapperAggregateSnapshotsWeekly {
+    Table,
+    OsuUserId,
+    SnapshotWeek,
+    TotalMapsets,
+    RankedMapsets,
+    LovedMapsets,
+    GuestMapsets,
+    NominatedMapsets,
+    GraveyardMapsets,
+    PendingMapsets,
+    TotalPlaycount,
+    AvgRating,
+    AvgStars,
+    AvgBpm,
+    AvgLengthSeconds,
+    MainMode,
+    UpdatedAt,
+}

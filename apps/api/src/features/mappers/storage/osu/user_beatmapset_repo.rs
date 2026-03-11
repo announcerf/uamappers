@@ -90,4 +90,14 @@ impl OsuUserBeatmapsetRepo {
 
         Ok((beatmapsets, total))
     }
+
+    pub async fn list_by_osu_user_id(
+        &self,
+        osu_user_id: i64,
+    ) -> Result<Vec<osu_user_beatmapset::Model>, DbErr> {
+        osu_user_beatmapset::Entity::find()
+            .filter(osu_user_beatmapset::Column::OsuUserId.eq(osu_user_id))
+            .all(&self.db)
+            .await
+    }
 }
