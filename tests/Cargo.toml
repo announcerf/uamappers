@@ -1,0 +1,48 @@
+[package]
+name = "uamappers-tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono.workspace = true
+rosu-v2.workspace = true
+serde_json.workspace = true
+uamappers-api = { path = "../apps/api" }
+uamappers-worker = { path = "../apps/worker" }
+
+[[test]]
+name = "mapper_projection"
+path = "mapper_projection.rs"
+
+[[test]]
+name = "mapper_aggregate"
+path = "mapper_aggregate.rs"
+
+[[test]]
+name = "mapper_snapshot"
+path = "mapper_snapshot.rs"
+
+[[test]]
+name = "clamp_limit"
+path = "clamp_limit.rs"
+
+[[test]]
+name = "db_url"
+path = "db_url.rs"
+
+[[test]]
+name = "mapper_page_dto"
+path = "mapper_page_dto.rs"
+
+[[test]]
+name = "mapper_profile_dto"
+path = "mapper_profile_dto.rs"
+
+[[test]]
+name = "beatmapset_details_dto"
+path = "beatmapset_details_dto.rs"
+
+[[test]]
+name = "api_casing"
+path = "api_casing.rs"

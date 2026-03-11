@@ -1,0 +1,111 @@
+use chrono::Utc;
+use serde_json::json;
+use uamappers_api::features::mappers::http::presenters::mapper_profile_to_dto;
+
+#[test]
+fn mapper_profile_to_dto_includes_stats_positions_and_charts() {
+    let now = Utc::now();
+    let dto = mapper_profile_to_dto(uamappers_api::features::mappers::usecases::MapperProfile {
+        mapper: uamappers_api::entities::ua_mapper::Model {
+            osu_user_id: 42,
+            username: "mapper".to_string(),
+            country_code: "UA".to_string(),
+            first_seen_at: now,
+            last_seen_at: now,
+            created_at: now,
+            updated_at: now,
+        },
+        mapper_profile: Some(uamappers_api::entities::mapper_profile::Model {
+            osu_user_id: 42,
+            username: "mapper".to_string(),
+            avatar_url: "https://avatar".to_string(),
+            country: "Ukraine".to_string(),
+            country_code: "UA".to_string(),
+            cover_url: "https://cover".to_string(),
+            primary_mode: "osu".to_string(),
+            join_date: now,
+            last_visit: Some(now),
+            mapping_followers: 10,
+            kudosu_available: 2,
+            kudosu_total: 50,
+            badges_json: json!([]),
+            groups_json: json!([]),
+            is_bng: true,
+            is_nat: false,
+            is_gmt: false,
+            is_limited_bn: false,
+            is_full_bn: true,
+            cached_at: now,
+            created_at: now,
+            updated_at: now,
+        }),
+        mapper_stats: Some(uamappers_api::entities::mapper_stats_current::Model {
+            osu_user_id: 42,
+            total_mapsets: 5,
+            ranked_mapsets: 3,
+            loved_mapsets: 1,
+            guest_mapsets: 2,
+            nominated_mapsets: 1,
+            graveyard_mapsets: 1,
+            pending_mapsets: 0,
+            total_playcount: 1000,
+            avg_rating: 8.2,
+            weighted_rating: 8.4,
+            avg_stars: 5.1,
+            min_stars: 3.2,
+            max_stars: 6.7,
+            avg_bpm: 180.0,
+            avg_length_seconds: 120.0,
+            avg_ar: 9.0,
+            avg_cs: 4.0,
+            avg_od: 8.5,
+            avg_hp: 6.5,
+            first_submitted_date: Some(now),
+            first_ranked_date: Some(now),
+            last_mapset_updated_at: Some(now),
+            main_mode: "osu".to_string(),
+            mapping_followers: 10,
+            kudosu_total: 50,
+            has_ranked: true,
+            has_loved: true,
+            has_guest: true,
+            has_nominated: true,
+            updated_at: now,
+        }),
+        leaderboard_positions: vec![uamappers_api::entities::leaderboard_position_current::Model {
+            leaderboard_key: "ranked".to_string(),
+            osu_user_id: 42,
+            current_rank: 1,
+            previous_rank: Some(3),
+            rank_delta: 2,
+            measured_at: now,
+            updated_at: now,
+        }],
+        charts: vec![uamappers_api::entities::mapper_aggregate_snapshot_weekly::Model {
+            osu_user_id: 42,
+            snapshot_week: now,
+            total_mapsets: 5,
+            ranked_mapsets: 3,
+            loved_mapsets: 1,
+            guest_mapsets: 2,
+            nominated_mapsets: 1,
+            graveyard_mapsets: 1,
+            pending_mapsets: 0,
+            total_playcount: 1000,
+            avg_rating: 8.2,
+            avg_stars: 5.1,
+            avg_bpm: 180.0,
+            avg_length_seconds: 120.0,
+            main_mode: "osu".to_string(),
+            updated_at: now,
+        }],
+        user_fetched_at: Some(now),
+        user_raw: Some(json!({"username": "mapper"})),
+    });
+
+    assert!(dto.stats.is_some());
+    assert_eq!(dto.leaderboard_positions.len(), 1);
+    assert_eq!(dto.charts.osu_user_id, 42);
+    assert_eq!(dto.charts.points.len(), 1);
+    assert_eq!(dto.user_fetched_at, Some(now));
+}

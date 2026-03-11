@@ -3,6 +3,7 @@ resolver = "2"
 members = [
   "apps/api",
   "apps/worker",
+  "tests",
 ]
 
 [workspace.package]

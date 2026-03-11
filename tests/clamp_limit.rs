@@ -1,6 +1,4 @@
-use uamappers_api::features::mappers::http::handlers::common::{
-    DEFAULT_LIMIT, MAX_LIMIT, clamp_limit,
-};
+use uamappers_api::features::mappers::http::pagination::{DEFAULT_LIMIT, MAX_LIMIT, clamp_limit};
 
 #[test]
 fn clamp_limit_defaults_to_default_limit() {
