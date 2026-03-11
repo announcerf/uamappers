@@ -4,13 +4,15 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use crate::{
     app::state::AppState,
-    features::{ingest, mappers, system},
+    features::{beatmapsets, ingest, leaderboards, mappers, system},
     infra::config::AppConfig,
     openapi::ApiDoc,
 };
 
 pub fn build(state: AppState, config: &AppConfig) -> Router {
     let api_router = Router::new()
+        .nest("/beatmapsets", beatmapsets::routes::router())
+        .nest("/leaderboards", leaderboards::routes::router())
         .nest("/mappers", mappers::routes::router())
         .nest("/ingest", ingest::routes::router())
         .nest("/system", system::routes::router())

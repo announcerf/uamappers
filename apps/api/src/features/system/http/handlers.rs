@@ -2,10 +2,10 @@ use axum::Json;
 
 use crate::shared::errors::ApiError;
 
-use super::dto::HealthDtoV1;
+use super::dto::HealthDto;
 
-pub async fn health() -> Result<Json<HealthDtoV1>, ApiError> {
-    Ok(Json(HealthDtoV1 {
+pub async fn health() -> Result<Json<HealthDto>, ApiError> {
+    Ok(Json(HealthDto {
         status: "ok".to_string(),
     }))
 }

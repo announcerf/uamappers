@@ -1,6 +1,6 @@
 use crate::shared::errors::ErrorResponse;
 
-use super::IngestStatusDtoV1;
+use super::IngestStatusDto;
 
 #[utoipa::path(
     get,
@@ -8,9 +8,9 @@ use super::IngestStatusDtoV1;
     tag = "Ingest::Status",
     summary = "Get ingest scan status",
     responses(
-        (status = 200, description = "Current ingest status", body = IngestStatusDtoV1),
+        (status = 200, description = "Current ingest status", body = IngestStatusDto),
         (status = 500, description = "Internal error", body = ErrorResponse)
     ),
-    operation_id = "ingest_status_v1"
+    operation_id = "ingest_status"
 )]
 pub async fn get_status() {}

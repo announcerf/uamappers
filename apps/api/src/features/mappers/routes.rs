@@ -13,8 +13,16 @@ pub fn router() -> Router<AppState> {
             axum::routing::get(handlers::get_mapper_by_id),
         )
         .route(
+            "/by-id/{osu_user_id}/charts",
+            axum::routing::get(handlers::get_mapper_charts_by_id),
+        )
+        .route(
             "/by-id/{osu_user_id}/beatmapsets",
             axum::routing::get(handlers::list_mapper_beatmapsets_by_id),
+        )
+        .route(
+            "/{user}/charts",
+            axum::routing::get(handlers::get_mapper_charts),
         )
         .route(
             "/{user}/beatmapsets",

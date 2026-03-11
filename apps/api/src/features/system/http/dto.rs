@@ -2,6 +2,7 @@ use serde::Serialize;
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct HealthDtoV1 {
+#[serde(rename_all = "camelCase")]
+pub struct HealthDto {
     pub status: String,
 }

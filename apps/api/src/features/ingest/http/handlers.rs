@@ -1,12 +1,10 @@
-use axum::{Json, extract::State};
+use axum::{extract::State, Json};
 
 use crate::{app::state::AppState, features::ingest::usecases, shared::errors::ApiError};
 
-use super::dto::{IngestStatusDtoV1, ScanStateDtoV1};
+use super::dto::{IngestStatusDto, ScanStateDto};
 
-pub async fn get_status(
-    State(state): State<AppState>,
-) -> Result<Json<IngestStatusDtoV1>, ApiError> {
+pub async fn get_status(State(state): State<AppState>) -> Result<Json<IngestStatusDto>, ApiError> {
     let rows = usecases::list_scan_states(&state.scan_state_repo)
         .await
         .map_err(|err| {
@@ -16,7 +14,7 @@ pub async fn get_status(
 
     let states = rows
         .into_iter()
-        .map(|row| ScanStateDtoV1 {
+        .map(|row| ScanStateDto {
             name: row.name,
             cursor: row.cursor,
             last_success_at: row.last_success_at,
@@ -27,5 +25,5 @@ pub async fn get_status(
         })
         .collect();
 
-    Ok(Json(IngestStatusDtoV1 { states }))
+    Ok(Json(IngestStatusDto { states }))
 }

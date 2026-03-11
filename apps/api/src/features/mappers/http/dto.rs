@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct UaMapperDtoV1 {
+#[serde(rename_all = "camelCase")]
+pub struct UaMapperDto {
     pub osu_user_id: i64,
     pub username: String,
     pub country_code: String,
@@ -12,38 +13,136 @@ pub struct UaMapperDtoV1 {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct UaMapperListResponseV1 {
-    pub items: Vec<UaMapperDtoV1>,
-    pub limit: u64,
-    pub offset: u64,
+#[serde(rename_all = "camelCase")]
+pub struct UaMapperListResponse {
+    pub items: Vec<UaMapperDto>,
+    pub next_cursor: Option<i64>,
     pub total: u64,
 }
 
 #[derive(Debug, Deserialize, IntoParams, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct UaMapperListQuery {
-    pub limit: Option<u64>,
-    pub offset: Option<u64>,
+    pub cursor: Option<i64>,
 }
 
 #[derive(Debug, Deserialize, IntoParams, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct UaMapperSearchQuery {
     pub q: String,
-    pub limit: Option<u64>,
-    pub offset: Option<u64>,
+    pub cursor: Option<i64>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct UaMapperProfileDtoV1 {
-    pub mapper: UaMapperDtoV1,
+#[serde(rename_all = "camelCase")]
+pub struct UaMapperProfileDto {
+    pub mapper: UaMapperDto,
+    pub profile: Option<MapperProfileProjectionDto>,
+    pub stats: Option<MapperStatsCurrentDto>,
+    pub leaderboard_positions: Vec<MapperLeaderboardPositionDto>,
+    pub charts: MapperChartsResponseDto,
     #[schema(value_type = Object)]
     pub user: Option<serde_json::Value>,
     pub user_fetched_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MapperProfileProjectionDto {
+    pub avatar_url: String,
+    pub country: String,
+    pub country_code: String,
+    pub cover_url: String,
+    pub primary_mode: String,
+    pub join_date: chrono::DateTime<chrono::Utc>,
+    pub last_visit: Option<chrono::DateTime<chrono::Utc>>,
+    pub mapping_followers: i32,
+    pub kudosu_available: i32,
+    pub kudosu_total: i32,
+    #[schema(value_type = Object)]
+    pub badges: serde_json::Value,
+    #[schema(value_type = Object)]
+    pub groups: serde_json::Value,
+    pub is_bng: bool,
+    pub is_nat: bool,
+    pub is_gmt: bool,
+    pub is_limited_bn: bool,
+    pub is_full_bn: bool,
+    pub cached_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MapperStatsCurrentDto {
+    pub total_mapsets: i32,
+    pub ranked_mapsets: i32,
+    pub loved_mapsets: i32,
+    pub guest_mapsets: i32,
+    pub nominated_mapsets: i32,
+    pub graveyard_mapsets: i32,
+    pub pending_mapsets: i32,
+    pub total_playcount: i64,
+    pub avg_rating: f32,
+    pub weighted_rating: f32,
+    pub avg_stars: f32,
+    pub min_stars: f32,
+    pub max_stars: f32,
+    pub avg_bpm: f32,
+    pub avg_length_seconds: f32,
+    pub avg_ar: f32,
+    pub avg_cs: f32,
+    pub avg_od: f32,
+    pub avg_hp: f32,
+    pub first_submitted_date: Option<chrono::DateTime<chrono::Utc>>,
+    pub first_ranked_date: Option<chrono::DateTime<chrono::Utc>>,
+    pub last_mapset_updated_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub main_mode: String,
+    pub mapping_followers: i32,
+    pub kudosu_total: i32,
+    pub has_ranked: bool,
+    pub has_loved: bool,
+    pub has_guest: bool,
+    pub has_nominated: bool,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MapperLeaderboardPositionDto {
+    pub leaderboard_key: String,
+    pub current_rank: i32,
+    pub previous_rank: Option<i32>,
+    pub rank_delta: i32,
+    pub measured_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MapperChartsPointDto {
+    pub snapshot_week: chrono::DateTime<chrono::Utc>,
+    pub total_mapsets: i32,
+    pub ranked_mapsets: i32,
+    pub loved_mapsets: i32,
+    pub guest_mapsets: i32,
+    pub nominated_mapsets: i32,
+    pub total_playcount: i64,
+    pub avg_rating: f32,
+    pub avg_stars: f32,
+    pub avg_bpm: f32,
+    pub avg_length_seconds: f32,
+    pub main_mode: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MapperChartsResponseDto {
+    pub osu_user_id: i64,
+    pub points: Vec<MapperChartsPointDto>,
+}
+
 #[derive(Debug, Deserialize, ToSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum UserBeatmapsetsKindDtoV1 {
-    Favourite,
+#[serde(rename_all = "camelCase")]
+pub enum UserBeatmapsetsKindDto {
     Graveyard,
     Guest,
     Loved,
@@ -52,10 +151,9 @@ pub enum UserBeatmapsetsKindDtoV1 {
     Ranked,
 }
 
-impl UserBeatmapsetsKindDtoV1 {
+impl UserBeatmapsetsKindDto {
     pub fn as_str(&self) -> &'static str {
         match self {
-            Self::Favourite => "favourite",
             Self::Graveyard => "graveyard",
             Self::Guest => "guest",
             Self::Loved => "loved",
@@ -67,7 +165,8 @@ impl UserBeatmapsetsKindDtoV1 {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct BeatmapsetDtoV1 {
+#[serde(rename_all = "camelCase")]
+pub struct BeatmapsetDto {
     pub osu_beatmapset_id: i64,
     pub osu_last_updated: chrono::DateTime<chrono::Utc>,
     pub cached_at: chrono::DateTime<chrono::Utc>,
@@ -76,16 +175,18 @@ pub struct BeatmapsetDtoV1 {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct BeatmapsetListResponseV1 {
-    pub items: Vec<BeatmapsetDtoV1>,
+#[serde(rename_all = "camelCase")]
+pub struct BeatmapsetListResponse {
+    pub items: Vec<BeatmapsetDto>,
     pub limit: u64,
     pub offset: u64,
     pub total: u64,
 }
 
 #[derive(Debug, Deserialize, IntoParams, ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct BeatmapsetListQuery {
-    pub kind: UserBeatmapsetsKindDtoV1,
+    pub kind: UserBeatmapsetsKindDto,
     pub limit: Option<u64>,
     pub offset: Option<u64>,
 }

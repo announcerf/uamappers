@@ -1,4 +1,3 @@
 pub mod dto;
 pub mod handlers;
-pub mod pagination;
 pub mod presenters;

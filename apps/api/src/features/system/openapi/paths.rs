@@ -1,6 +1,6 @@
 use crate::shared::errors::ErrorResponse;
 
-use super::HealthDtoV1;
+use super::HealthDto;
 
 #[utoipa::path(
     get,
@@ -8,9 +8,9 @@ use super::HealthDtoV1;
     tag = "System::Health",
     summary = "Health check",
     responses(
-        (status = 200, description = "Health check", body = HealthDtoV1),
+        (status = 200, description = "Health check", body = HealthDto),
         (status = 500, description = "Internal error", body = ErrorResponse)
     ),
-    operation_id = "system_health_v1"
+    operation_id = "system_health"
 )]
 pub async fn health() {}

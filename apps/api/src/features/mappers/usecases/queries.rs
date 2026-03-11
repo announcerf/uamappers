@@ -1,22 +1,30 @@
 use sea_orm::DbErr;
 
+use crate::features::leaderboards::http::dto::LeaderboardKeyDto;
 use crate::features::mappers::storage::{
+    leaderboard_position_current_repo::LeaderboardPositionCurrentRepo,
+    mapper_aggregate_snapshot_weekly_repo::MapperAggregateSnapshotWeeklyRepo,
+    mapper_profile_repo::MapperProfileRepo, mapper_stats_current_repo::MapperStatsCurrentRepo,
     osu_user_beatmapset_repo::OsuUserBeatmapsetRepo, osu_user_repo::OsuUserRepo,
     ua_mapper_repo::UaMapperRepo,
 };
 
-use super::types::{BeatmapsetPage, MapperPage, MapperProfile, PageInput};
+use super::types::{
+    BeatmapsetPage, CursorInput, MapperCharts, MapperPage, MapperProfile, PageInput,
+};
 
 pub async fn list_mappers(
     ua_mappers_repo: &UaMapperRepo,
-    page: PageInput,
+    cursor: CursorInput,
 ) -> Result<MapperPage, DbErr> {
-    let (items, total) = ua_mappers_repo.list(page.limit, page.offset).await?;
+    let total = ua_mappers_repo.count_all().await?;
+    let after = cursor.after.unwrap_or(0);
+    let items = ua_mappers_repo.list_after_id(after, cursor.limit).await?;
+    let next_cursor = items.last().map(|row| row.osu_user_id);
 
     Ok(MapperPage {
         items,
-        limit: page.limit,
-        offset: page.offset,
+        next_cursor,
         total,
     })
 }
@@ -24,38 +32,102 @@ pub async fn list_mappers(
 pub async fn search_mappers(
     ua_mappers_repo: &UaMapperRepo,
     query: &str,
-    page: PageInput,
+    cursor: CursorInput,
 ) -> Result<MapperPage, DbErr> {
     let (items, total) = ua_mappers_repo
-        .search(query, page.limit, page.offset)
+        .search_after_id(query, cursor.after, cursor.limit)
         .await?;
+    let next_cursor = items.last().map(|row| row.osu_user_id);
 
     Ok(MapperPage {
         items,
-        limit: page.limit,
-        offset: page.offset,
+        next_cursor,
         total,
     })
 }
 
 pub async fn get_mapper_profile_by_username(
     ua_mappers_repo: &UaMapperRepo,
+    mapper_profiles_repo: &MapperProfileRepo,
+    mapper_stats_repo: &MapperStatsCurrentRepo,
+    leaderboard_positions_repo: &LeaderboardPositionCurrentRepo,
+    snapshots_repo: &MapperAggregateSnapshotWeeklyRepo,
     osu_users_repo: &OsuUserRepo,
     username: &str,
 ) -> Result<Option<MapperProfile>, DbErr> {
     let mapper = ua_mappers_repo.get_by_username(username).await?;
 
-    load_mapper_profile(osu_users_repo, mapper).await
+    load_mapper_profile(
+        mapper_profiles_repo,
+        mapper_stats_repo,
+        leaderboard_positions_repo,
+        snapshots_repo,
+        osu_users_repo,
+        mapper,
+    )
+    .await
+}
+
+pub async fn get_mapper_charts_by_username(
+    ua_mappers_repo: &UaMapperRepo,
+    snapshots_repo: &MapperAggregateSnapshotWeeklyRepo,
+    username: &str,
+) -> Result<Option<MapperCharts>, DbErr> {
+    let mapper = ua_mappers_repo.get_by_username(username).await?;
+    let Some(mapper) = mapper else {
+        return Ok(None);
+    };
+
+    let points = snapshots_repo
+        .list_by_osu_user_id(mapper.osu_user_id)
+        .await?;
+
+    Ok(Some(MapperCharts {
+        osu_user_id: mapper.osu_user_id,
+        points,
+    }))
 }
 
 pub async fn get_mapper_profile_by_id(
     ua_mappers_repo: &UaMapperRepo,
+    mapper_profiles_repo: &MapperProfileRepo,
+    mapper_stats_repo: &MapperStatsCurrentRepo,
+    leaderboard_positions_repo: &LeaderboardPositionCurrentRepo,
+    snapshots_repo: &MapperAggregateSnapshotWeeklyRepo,
     osu_users_repo: &OsuUserRepo,
     osu_user_id: i64,
 ) -> Result<Option<MapperProfile>, DbErr> {
     let mapper = ua_mappers_repo.get_by_osu_user_id(osu_user_id).await?;
 
-    load_mapper_profile(osu_users_repo, mapper).await
+    load_mapper_profile(
+        mapper_profiles_repo,
+        mapper_stats_repo,
+        leaderboard_positions_repo,
+        snapshots_repo,
+        osu_users_repo,
+        mapper,
+    )
+    .await
+}
+
+pub async fn get_mapper_charts_by_id(
+    ua_mappers_repo: &UaMapperRepo,
+    snapshots_repo: &MapperAggregateSnapshotWeeklyRepo,
+    osu_user_id: i64,
+) -> Result<Option<MapperCharts>, DbErr> {
+    let mapper = ua_mappers_repo.get_by_osu_user_id(osu_user_id).await?;
+    let Some(mapper) = mapper else {
+        return Ok(None);
+    };
+
+    let points = snapshots_repo
+        .list_by_osu_user_id(mapper.osu_user_id)
+        .await?;
+
+    Ok(Some(MapperCharts {
+        osu_user_id: mapper.osu_user_id,
+        points,
+    }))
 }
 
 pub async fn list_mapper_beatmapsets_by_username(
@@ -97,6 +169,10 @@ pub async fn list_mapper_beatmapsets_by_id(
 }
 
 async fn load_mapper_profile(
+    mapper_profiles_repo: &MapperProfileRepo,
+    mapper_stats_repo: &MapperStatsCurrentRepo,
+    leaderboard_positions_repo: &LeaderboardPositionCurrentRepo,
+    snapshots_repo: &MapperAggregateSnapshotWeeklyRepo,
     osu_users_repo: &OsuUserRepo,
     mapper: Option<crate::entities::ua_mapper::Model>,
 ) -> Result<Option<MapperProfile>, DbErr> {
@@ -104,6 +180,18 @@ async fn load_mapper_profile(
         return Ok(None);
     };
 
+    let mapper_profile = mapper_profiles_repo
+        .get_by_osu_user_id(mapper.osu_user_id)
+        .await?;
+    let mapper_stats = mapper_stats_repo
+        .get_by_osu_user_id(mapper.osu_user_id)
+        .await?;
+    let leaderboard_positions = leaderboard_positions_repo
+        .list_by_osu_user_id(mapper.osu_user_id)
+        .await?;
+    let charts = snapshots_repo
+        .list_by_osu_user_id(mapper.osu_user_id)
+        .await?;
     let user_row = osu_users_repo
         .get_by_osu_user_id(mapper.osu_user_id)
         .await?;
@@ -114,7 +202,36 @@ async fn load_mapper_profile(
 
     Ok(Some(MapperProfile {
         mapper,
+        mapper_profile,
+        mapper_stats,
+        leaderboard_positions: order_positions(leaderboard_positions),
+        charts,
         user_fetched_at,
         user_raw,
     }))
+}
+
+fn order_positions(
+    mut positions: Vec<crate::entities::leaderboard_position_current::Model>,
+) -> Vec<crate::entities::leaderboard_position_current::Model> {
+    positions.sort_by_key(|row| leaderboard_order(&row.leaderboard_key));
+    positions
+}
+
+fn leaderboard_order(key: &str) -> usize {
+    leaderboard_keys()
+        .iter()
+        .position(|candidate| *candidate == key)
+        .unwrap_or(usize::MAX)
+}
+
+fn leaderboard_keys() -> [&'static str; 6] {
+    [
+        LeaderboardKeyDto::Followers.as_str(),
+        LeaderboardKeyDto::Ranked.as_str(),
+        LeaderboardKeyDto::GuestDiff.as_str(),
+        LeaderboardKeyDto::Plays.as_str(),
+        LeaderboardKeyDto::Kudosu.as_str(),
+        LeaderboardKeyDto::Nominations.as_str(),
+    ]
 }

@@ -1,3 +1,3 @@
 pub mod paths;
 
-pub use crate::features::system::http::dto::HealthDtoV1;
+pub use crate::features::system::http::dto::HealthDto;

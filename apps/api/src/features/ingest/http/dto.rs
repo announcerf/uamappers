@@ -3,7 +3,8 @@ use serde::Serialize;
 use utoipa::ToSchema;
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct ScanStateDtoV1 {
+#[serde(rename_all = "camelCase")]
+pub struct ScanStateDto {
     pub name: String,
     pub cursor: Option<String>,
     pub last_success_at: Option<DateTime<Utc>>,
@@ -14,6 +15,7 @@ pub struct ScanStateDtoV1 {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-pub struct IngestStatusDtoV1 {
-    pub states: Vec<ScanStateDtoV1>,
+#[serde(rename_all = "camelCase")]
+pub struct IngestStatusDto {
+    pub states: Vec<ScanStateDto>,
 }

@@ -1,20 +1,21 @@
-use axum::{Json, extract::Query, extract::State};
+use axum::{extract::Query, extract::State, Json};
 
 use crate::{app::state::AppState, features::mappers::usecases, shared::errors::ApiError};
 
-use super::super::dto::{UaMapperListQuery, UaMapperListResponseV1, UaMapperSearchQuery};
-use super::common::{clamp_limit, mapper_page_to_dto};
+use super::super::dto::{UaMapperListQuery, UaMapperListResponse, UaMapperSearchQuery};
+use super::super::pagination::DEFAULT_LIMIT;
+use super::super::presenters::mapper_page_to_dto;
 
 pub async fn list_mappers(
     State(state): State<AppState>,
     Query(query): Query<UaMapperListQuery>,
-) -> Result<Json<UaMapperListResponseV1>, ApiError> {
-    let page = usecases::PageInput {
-        limit: clamp_limit(query.limit),
-        offset: query.offset.unwrap_or(0),
+) -> Result<Json<UaMapperListResponse>, ApiError> {
+    let cursor = usecases::CursorInput {
+        limit: DEFAULT_LIMIT,
+        after: query.cursor,
     };
 
-    let result = usecases::list_mappers(&state.ua_mappers_repo, page)
+    let result = usecases::list_mappers(&state.ua_mappers_repo, cursor)
         .await
         .map_err(|err| {
             tracing::error!(error = ?err, "failed to list mappers");
@@ -27,7 +28,7 @@ pub async fn list_mappers(
 pub async fn search_mappers(
     State(state): State<AppState>,
     Query(query): Query<UaMapperSearchQuery>,
-) -> Result<Json<UaMapperListResponseV1>, ApiError> {
+) -> Result<Json<UaMapperListResponse>, ApiError> {
     if query.q.trim().is_empty() {
         return Err(
             ApiError::bad_request("query_required", "Search query is required")
@@ -35,12 +36,12 @@ pub async fn search_mappers(
         );
     }
 
-    let page = usecases::PageInput {
-        limit: clamp_limit(query.limit),
-        offset: query.offset.unwrap_or(0),
+    let cursor = usecases::CursorInput {
+        limit: DEFAULT_LIMIT,
+        after: query.cursor,
     };
 
-    let result = usecases::search_mappers(&state.ua_mappers_repo, &query.q, page)
+    let result = usecases::search_mappers(&state.ua_mappers_repo, &query.q, cursor)
         .await
         .map_err(|err| {
             tracing::error!(error = ?err, query = %query.q, "failed to search mappers");

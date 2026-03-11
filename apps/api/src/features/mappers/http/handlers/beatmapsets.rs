@@ -1,18 +1,19 @@
 use axum::{
-    Json,
     extract::{Path, Query, State},
+    Json,
 };
 
 use crate::{app::state::AppState, features::mappers::usecases, shared::errors::ApiError};
 
-use super::super::dto::{BeatmapsetListQuery, BeatmapsetListResponseV1};
-use super::common::{beatmapset_page_to_dto, clamp_limit};
+use super::super::dto::{BeatmapsetListQuery, BeatmapsetListResponse};
+use super::super::pagination::clamp_limit;
+use super::super::presenters::beatmapset_page_to_dto;
 
 pub async fn list_mapper_beatmapsets(
     State(state): State<AppState>,
     Path(user): Path<String>,
     Query(query): Query<BeatmapsetListQuery>,
-) -> Result<Json<BeatmapsetListResponseV1>, ApiError> {
+) -> Result<Json<BeatmapsetListResponse>, ApiError> {
     let page = usecases::PageInput {
         limit: clamp_limit(query.limit),
         offset: query.offset.unwrap_or(0),
@@ -42,7 +43,7 @@ pub async fn list_mapper_beatmapsets_by_id(
     State(state): State<AppState>,
     Path(osu_user_id): Path<i64>,
     Query(query): Query<BeatmapsetListQuery>,
-) -> Result<Json<BeatmapsetListResponseV1>, ApiError> {
+) -> Result<Json<BeatmapsetListResponse>, ApiError> {
     let page = usecases::PageInput {
         limit: clamp_limit(query.limit),
         offset: query.offset.unwrap_or(0),
