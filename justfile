@@ -95,7 +95,8 @@ migrate:
 		fi; \
 		sleep 1; \
 	done
-	docker compose -f {{dev_compose}} -p {{project}} run --rm migrator up
+	DATABASE_URL="postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB" \
+	docker compose -f {{dev_compose}} -p {{project}} run --rm -e DATABASE_URL migrator up
 
 [doc("Open a psql shell inside the postgres container")]
 psql:
