@@ -3,8 +3,15 @@ use uamappers_api::{
     features::{
         ingest::storage::repo::ScanStateRepo,
         mappers::storage::{
-            beatmapset_repo::BeatmapsetRepo, osu_user_beatmapset_repo::OsuUserBeatmapsetRepo,
-            osu_user_repo::OsuUserRepo, ua_mapper_repo::UaMapperRepo,
+            beatmap_profile_repo::BeatmapProfileRepo,
+            beatmapset_profile_repo::BeatmapsetProfileRepo, beatmapset_repo::BeatmapsetRepo,
+            beatmapset_snapshot_weekly_repo::BeatmapsetSnapshotWeeklyRepo,
+            leaderboard_position_current_repo::LeaderboardPositionCurrentRepo,
+            mapper_aggregate_snapshot_weekly_repo::MapperAggregateSnapshotWeeklyRepo,
+            mapper_profile_repo::MapperProfileRepo,
+            mapper_stats_current_repo::MapperStatsCurrentRepo,
+            osu_user_beatmapset_repo::OsuUserBeatmapsetRepo, osu_user_repo::OsuUserRepo,
+            ua_mapper_repo::UaMapperRepo,
         },
     },
     infra::db,
@@ -13,7 +20,8 @@ use uamappers_api::{
 use crate::{
     features::ingest::osu_client::OsuClient,
     features::ingest::worker::jobs::{
-        mapper_discovery::MapperDiscovery, mapper_enrich::MapperEnrich,
+        mapper_discovery::MapperDiscovery,
+        mapper_enrich::{MapperEnrich, MapperEnrichRepos},
     },
     infra::config::WorkerConfig,
     shared::errors::WorkerError,
@@ -44,11 +52,20 @@ pub async fn build_runtime(config: WorkerConfig) -> Result<WorkerRuntime, Worker
     let enrich = MapperEnrich::new(
         osu_client,
         config.clone(),
-        ua_mappers_repo,
-        OsuUserRepo::new(db.clone()),
-        BeatmapsetRepo::new(db.clone()),
-        OsuUserBeatmapsetRepo::new(db.clone()),
-        scan_state_repo,
+        MapperEnrichRepos {
+            beatmap_profiles_repo: BeatmapProfileRepo::new(db.clone()),
+            beatmapset_profiles_repo: BeatmapsetProfileRepo::new(db.clone()),
+            beatmapset_snapshots_repo: BeatmapsetSnapshotWeeklyRepo::new(db.clone()),
+            beatmapsets_repo: BeatmapsetRepo::new(db.clone()),
+            leaderboard_positions_repo: LeaderboardPositionCurrentRepo::new(db.clone()),
+            mapper_aggregate_snapshots_repo: MapperAggregateSnapshotWeeklyRepo::new(db.clone()),
+            mapper_profiles_repo: MapperProfileRepo::new(db.clone()),
+            mapper_stats_repo: MapperStatsCurrentRepo::new(db.clone()),
+            osu_user_beatmapsets_repo: OsuUserBeatmapsetRepo::new(db.clone()),
+            osu_users_repo: OsuUserRepo::new(db.clone()),
+            scan_state_repo,
+            ua_mappers_repo,
+        },
     );
 
     Ok(WorkerRuntime {

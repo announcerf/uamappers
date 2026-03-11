@@ -1,6 +1,6 @@
 use crate::shared::errors::WorkerError;
 
-use super::page::collect_creators;
+use super::creators::collect_creators;
 use super::types::{DiscoveryResume, MapperDiscovery};
 
 impl MapperDiscovery {
