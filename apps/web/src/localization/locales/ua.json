@@ -1,0 +1,148 @@
+{
+  "i18n": {
+    "common": {
+      "navbar": {
+        "community": "Спільнота",
+        "rankings": "Рейтинги",
+        "analytics": "Аналітика",
+        "about": "Про проєкт"
+      },
+      "footer": {
+        "title": "Українська osu!-маппінг спільнота",
+        "authors": "Надано Esutarosa & announcerf.",
+        "copyright": "© Всі права захищені. 2026."
+      }
+    },
+    "home": {
+      "hero": {
+        "title": "Український маппінг-хаб",
+        "description": "Спільнота українського osu!-маппінгу та актуальні дані про кожного маппера, включно з мапами та базовою статистикою"
+      },
+      "search": {
+        "label": "Когось шукаєш?"
+      },
+      "loadMore": {
+        "label": "Завантажити більше"
+      }
+    },
+    "mapper": {
+      "general": {
+        "title": "Загальна статистика",
+        "profile": {
+          "title": "Профіль",
+          "dataLabel": "Склад",
+          "allMaps": "Усі карти",
+          "ranked": "Ранкеди",
+          "loved": "Лаведи",
+          "guestDifficulties": "Гостьові",
+          "nominated": "Номіновані",
+          "graveyard": "Закинуті",
+          "other": "Решта",
+          "totalDifficulties": "Всього difficulties",
+          "favouriteGenre": "Улюблений жанр",
+          "mainLanguage": "Основна мова",
+          "firstSubmittedBeatmap": "Перший мапсет",
+          "firstRankedBeatmap": "Перший ранкед",
+          "firstLovedBeatmap": "Перший лавед"
+        },
+        "parameters": {
+          "title": "Параметри",
+          "dataLabel": "Діапазон",
+          "stars": "Stars",
+          "bpm": "БПМ",
+          "length": "Тривалість",
+          "drainLength": "Чиста тривалість",
+          "ar": "AR",
+          "cs": "CS",
+          "od": "OD",
+          "hp": "HP",
+          "maxCombo": "Максимальне комбо",
+          "objects": "Об'єктів",
+          "circles": "Кругів",
+          "sliders": "Слайдерів",
+          "spinners": "Спінерів",
+          "passcount": "Passcount",
+          "playcountPerDifficulty": "Playcount per difficulty"
+        },
+        "activity": {
+          "title": "Активність",
+          "dataLabel": "Статистика",
+          "totalPlaycount": "Сумарно плеїв",
+          "totalFavourites": "Сумарно фаворитів",
+          "avgRating": "Середній рейтинг",
+          "kudosu": "Кудосу",
+          "avgPlaysPerMapset": "Середній plays per mapset",
+          "avgFavsPerMapset": "Середні favourites per mapset",
+          "favsPlaysRatio": "Favourites / Plays",
+          "avgRatingPerMapset": "Середній rating per mapset",
+          "rankedLovedRatio": "Частка ranked/loved у портфоліо"
+        },
+        "ratings": {
+          "title": "Позиції",
+          "dataLabel": "Рейтинг",
+          "bySubscribers": "За підписками",
+          "byRanked": "За ранкедами",
+          "byGuestDifficulties": "За гостьовими",
+          "byPlaycount": "За plays",
+          "byFavourites": "За favourites",
+          "byKudosu": "За kudosu",
+          "byNominations": "За номінації"
+        }
+      },
+      "maps": {
+        "title": "Статистика карт",
+        "allMaps": {
+          "label": "Усі карти"
+        },
+        "ranked": {
+          "label": "Рейтингові"
+        },
+        "loved": {
+          "label": "Улюблені"
+        },
+        "guest": {
+          "label": "Гостьові"
+        },
+        "graveyard": {
+          "label": "Закинуті"
+        },
+        "other": {
+          "label": "Решта"
+        }
+      },
+      "analytics": {
+        "title": "Аналітика",
+        "activity": {
+          "label": "Активність"
+        },
+        "status": {
+          "label": "Статуси"
+        },
+        "difficulty": {
+          "label": "Складність"
+        },
+        "modes": {
+          "label": "Режими"
+        },
+        "collabs": {
+          "label": "Колаби"
+        },
+        "populatity": {
+          "label": "Популярність"
+        },
+        "genres": {
+          "label": "Жанри"
+        },
+        "graphSorting": {
+          "byWeek": "За тиждень"
+        }
+      }
+    },
+    "rating": {
+      "hero": {
+        "title": "Рейтинг українських маперів"
+      },
+      "description": "Огляд позицій українських маперів за різними категоріями"
+    }
+  }
+}
