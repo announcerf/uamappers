@@ -1,3 +1,5 @@
+use rosu_v2::model::beatmap::BeatmapsetExtended;
+use rosu_v2::error::OsuError;
 use rosu_v2::model::user::UserBeatmapsetsKind;
 use uamappers_api::entities::ua_mapper;
 
@@ -57,6 +59,7 @@ impl MapperEnrich {
                     cursor.offset,
                 )
                 .await?;
+            let page = self.load_beatmapset_details(page).await?;
 
             let page_len = page.len();
             let payload = build_page_payload(&self.beatmapsets_repo, &page);
@@ -86,5 +89,29 @@ impl MapperEnrich {
         }
 
         Ok((pages_persisted, beatmapsets_persisted, relations_upserted))
+    }
+
+    async fn load_beatmapset_details(
+        &self,
+        page: Vec<BeatmapsetExtended>,
+    ) -> Result<Vec<BeatmapsetExtended>, WorkerError> {
+        let mut detailed = Vec::with_capacity(page.len());
+
+        for mapset in page {
+            match self.osu_client.beatmapset(mapset.mapset_id).await {
+                Ok(full) => detailed.push(full),
+                Err(WorkerError::OsuApi(OsuError::NotFound)) => {
+                    tracing::warn!(
+                        job = BEATMAPSETS_SCAN_NAME,
+                        osu_beatmapset_id = mapset.mapset_id,
+                        "beatmapset details missing, using partial user_beatmapsets payload"
+                    );
+                    detailed.push(mapset);
+                }
+                Err(err) => return Err(err),
+            }
+        }
+
+        Ok(detailed)
     }
 }
