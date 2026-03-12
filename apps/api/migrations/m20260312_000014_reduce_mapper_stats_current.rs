@@ -1,0 +1,152 @@
+use sea_orm_migration::prelude::*;
+
+#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(MapperStatsCurrent::Table)
+                    .drop_column(MapperStatsCurrent::AvgRating)
+                    .drop_column(MapperStatsCurrent::WeightedRating)
+                    .drop_column(MapperStatsCurrent::AvgStars)
+                    .drop_column(MapperStatsCurrent::MinStars)
+                    .drop_column(MapperStatsCurrent::MaxStars)
+                    .drop_column(MapperStatsCurrent::AvgBpm)
+                    .drop_column(MapperStatsCurrent::AvgLengthSeconds)
+                    .drop_column(MapperStatsCurrent::AvgAr)
+                    .drop_column(MapperStatsCurrent::AvgCs)
+                    .drop_column(MapperStatsCurrent::AvgOd)
+                    .drop_column(MapperStatsCurrent::AvgHp)
+                    .drop_column(MapperStatsCurrent::HasRanked)
+                    .drop_column(MapperStatsCurrent::HasLoved)
+                    .drop_column(MapperStatsCurrent::HasGuest)
+                    .drop_column(MapperStatsCurrent::HasNominated)
+                    .to_owned(),
+            )
+            .await
+    }
+
+    async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(MapperStatsCurrent::Table)
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::AvgRating)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::WeightedRating)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::AvgStars)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::MinStars)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::MaxStars)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::AvgBpm)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::AvgLengthSeconds)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::AvgAr)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::AvgCs)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::AvgOd)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::AvgHp)
+                            .float()
+                            .not_null()
+                            .default(0.0),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::HasRanked)
+                            .boolean()
+                            .not_null()
+                            .default(false),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::HasLoved)
+                            .boolean()
+                            .not_null()
+                            .default(false),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::HasGuest)
+                            .boolean()
+                            .not_null()
+                            .default(false),
+                    )
+                    .add_column(
+                        ColumnDef::new(MapperStatsCurrent::HasNominated)
+                            .boolean()
+                            .not_null()
+                            .default(false),
+                    )
+                    .to_owned(),
+            )
+            .await
+    }
+}
+
+#[derive(DeriveIden)]
+enum MapperStatsCurrent {
+    Table,
+    AvgRating,
+    WeightedRating,
+    AvgStars,
+    MinStars,
+    MaxStars,
+    AvgBpm,
+    AvgLengthSeconds,
+    AvgAr,
+    AvgCs,
+    AvgOd,
+    AvgHp,
+    HasRanked,
+    HasLoved,
+    HasGuest,
+    HasNominated,
+}

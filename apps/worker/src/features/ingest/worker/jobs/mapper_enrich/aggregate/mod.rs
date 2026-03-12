@@ -10,7 +10,7 @@ use uamappers_api::features::mappers::storage::osu_user_fingerprint::MapperFinge
 
 use crate::shared::errors::WorkerError;
 
-use super::snapshot::{mapper_stats_row_to_snapshot_row, snapshot_week};
+use super::snapshot::{build_mapper_snapshot_row, snapshot_week};
 use super::types::MapperEnrich;
 
 impl MapperEnrich {
@@ -45,7 +45,8 @@ impl MapperEnrich {
             &beatmapsets,
             &beatmaps,
         );
-        let snapshot = mapper_stats_row_to_snapshot_row(&row, snapshot_week(chrono::Utc::now()));
+        let snapshot =
+            build_mapper_snapshot_row(&row, &beatmapsets, &beatmaps, snapshot_week(chrono::Utc::now()));
         let txn = self.mapper_stats_repo.db().begin().await?;
         self.mapper_stats_repo.upsert_with(&txn, row).await?;
         self.mapper_aggregate_snapshots_repo

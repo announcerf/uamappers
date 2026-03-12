@@ -3,8 +3,7 @@ use uamappers_api::features::mappers::storage::osu_user_fingerprint::MapperFinge
 use uamappers_api::features::mappers::storage::mapper_stats_current_repo::NewMapperStatsCurrentRow;
 
 use super::stats_helpers::{
-    average_f32, count_status, dominant_mode, max_f32, min_f32, relevant_mapset_ids,
-    unique_kind_count, weighted_rating,
+    count_status, dominant_mode, relevant_mapset_ids, unique_kind_count,
 };
 
 pub fn build_mapper_stats_row(
@@ -34,17 +33,6 @@ pub fn build_mapper_stats_row(
         + count_status(&mapsets, "qualified")
         + count_status(&mapsets, "wip");
     let total_playcount = mapsets.iter().map(|row| row.playcount).sum();
-    let avg_rating = average_f32(mapsets.iter().map(|row| row.rating));
-    let weighted_rating = weighted_rating(&mapsets);
-    let avg_stars = average_f32(beatmaps.iter().map(|row| row.stars));
-    let min_stars = min_f32(beatmaps.iter().map(|row| row.stars));
-    let max_stars = max_f32(beatmaps.iter().map(|row| row.stars));
-    let avg_bpm = average_f32(beatmaps.iter().map(|row| row.bpm));
-    let avg_length_seconds = average_f32(beatmaps.iter().map(|row| row.seconds_total as f32));
-    let avg_ar = average_f32(beatmaps.iter().map(|row| row.ar));
-    let avg_cs = average_f32(beatmaps.iter().map(|row| row.cs));
-    let avg_od = average_f32(beatmaps.iter().map(|row| row.od));
-    let avg_hp = average_f32(beatmaps.iter().map(|row| row.hp));
     let first_submitted_date = mapsets.iter().filter_map(|row| row.submitted_date).min();
     let first_ranked_date = mapsets.iter().filter_map(|row| row.ranked_date).min();
     let last_mapset_updated_at = mapsets.iter().map(|row| row.last_updated).max();
@@ -60,17 +48,6 @@ pub fn build_mapper_stats_row(
         graveyard_mapsets,
         pending_mapsets,
         total_playcount,
-        avg_rating,
-        weighted_rating,
-        avg_stars,
-        min_stars,
-        max_stars,
-        avg_bpm,
-        avg_length_seconds,
-        avg_ar,
-        avg_cs,
-        avg_od,
-        avg_hp,
         first_submitted_date,
         first_ranked_date,
         last_mapset_updated_at,
@@ -84,9 +61,5 @@ pub fn build_mapper_stats_row(
         kudosu_total: mapper_fingerprint
             .map(|row| row.kudosu.total)
             .unwrap_or(0),
-        has_ranked: ranked_mapsets > 0,
-        has_loved: loved_mapsets > 0,
-        has_guest: guest_mapsets > 0,
-        has_nominated: nominated_mapsets > 0,
     }
 }
