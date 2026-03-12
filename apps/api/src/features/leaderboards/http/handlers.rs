@@ -1,11 +1,13 @@
 use axum::{
-    Json,
     extract::{Path, Query, State},
+    Json,
 };
 
 use crate::{app::state::AppState, shared::errors::ApiError};
 
-use super::dto::{LeaderboardKeyDto, LeaderboardQueryDto, LeaderboardResponseDto, LeaderboardRowDto};
+use super::dto::{
+    LeaderboardKeyDto, LeaderboardQueryDto, LeaderboardResponseDto, LeaderboardRowDto,
+};
 
 pub async fn get_leaderboard(
     State(state): State<AppState>,
@@ -21,7 +23,8 @@ pub async fn get_leaderboard(
 
     let page = crate::features::leaderboards::usecases::get_leaderboard(
         &state.leaderboard_positions_repo,
-        &state.mapper_profiles_repo,
+        &state.ua_mappers_repo,
+        &state.osu_users_repo,
         &state.mapper_stats_repo,
         leaderboard,
         query.cursor,

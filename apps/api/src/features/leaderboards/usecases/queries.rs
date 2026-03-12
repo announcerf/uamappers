@@ -6,7 +6,8 @@ use serde_json::json;
 use crate::features::leaderboards::http::dto::LeaderboardKeyDto;
 use crate::features::mappers::storage::{
     leaderboard_position_current_repo::LeaderboardPositionCurrentRepo,
-    mapper_profile_repo::MapperProfileRepo, mapper_stats_current_repo::MapperStatsCurrentRepo,
+    mapper_stats_current_repo::MapperStatsCurrentRepo, osu_user_fingerprint::MapperFingerprint,
+    osu_user_repo::OsuUserRepo, ua_mapper_repo::UaMapperRepo,
 };
 
 use super::types::{LeaderboardPage, LeaderboardRow};
@@ -15,7 +16,8 @@ const LEADERBOARD_LIMIT: u64 = 100;
 
 pub async fn get_leaderboard(
     positions_repo: &LeaderboardPositionCurrentRepo,
-    mapper_profiles_repo: &MapperProfileRepo,
+    ua_mappers_repo: &UaMapperRepo,
+    osu_users_repo: &OsuUserRepo,
     mapper_stats_repo: &MapperStatsCurrentRepo,
     leaderboard: LeaderboardKeyDto,
     cursor: Option<i32>,
@@ -24,12 +26,17 @@ pub async fn get_leaderboard(
         .list_page_by_rank(leaderboard.as_str(), cursor, LEADERBOARD_LIMIT)
         .await?;
     let ids: Vec<i64> = rows.iter().map(|row| row.osu_user_id).collect();
-    let profiles = mapper_profiles_repo.list_by_osu_user_ids(&ids).await?;
+    let mappers = ua_mappers_repo.list_existing_rows(&ids).await?;
+    let fingerprints = osu_users_repo.list_by_osu_user_ids(&ids).await?;
     let stats = mapper_stats_repo.list_by_osu_user_ids(&ids).await?;
 
-    let profiles = profiles
+    let mappers = mappers
         .into_iter()
         .map(|row| (row.osu_user_id, row))
+        .collect::<HashMap<_, _>>();
+    let fingerprints = fingerprints
+        .into_iter()
+        .filter_map(|row| MapperFingerprint::from_raw(&row.raw).map(|raw| (row.osu_user_id, raw)))
         .collect::<HashMap<_, _>>();
     let stats = stats
         .into_iter()
@@ -38,21 +45,24 @@ pub async fn get_leaderboard(
 
     let mut items = Vec::new();
     for row in &rows {
-        let Some(profile) = profiles.get(&row.osu_user_id) else {
+        let Some(mapper) = mappers.get(&row.osu_user_id) else {
             continue;
         };
         let Some(stat) = stats.get(&row.osu_user_id) else {
             continue;
         };
+        let fingerprint = fingerprints.get(&row.osu_user_id);
 
         items.push(LeaderboardRow {
             rank: row.current_rank,
             previous_rank: row.previous_rank,
             rank_delta: row.rank_delta,
             osu_user_id: row.osu_user_id,
-            username: profile.username.clone(),
-            avatar_url: profile.avatar_url.clone(),
-            country_code: profile.country_code.clone(),
+            username: mapper.username.clone(),
+            avatar_url: fingerprint
+                .map(|row| row.avatar_url.clone())
+                .unwrap_or_default(),
+            country_code: mapper.country_code.clone(),
             main_metric_key: leaderboard_metric_key(leaderboard).to_string(),
             main_metric_value: leaderboard_metric_value(leaderboard, stat),
             secondary_metrics: secondary_metrics(leaderboard, stat),
