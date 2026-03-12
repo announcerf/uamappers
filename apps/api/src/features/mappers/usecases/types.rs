@@ -1,9 +1,8 @@
-use chrono::{DateTime, Utc};
 use sea_orm::JsonValue;
 
 use crate::entities::{
-    beatmapset, leaderboard_position_current, mapper_aggregate_snapshot_weekly, mapper_profile,
-    mapper_stats_current, ua_mapper,
+    beatmapset, leaderboard_position_current, mapper_aggregate_snapshot_weekly, mapper_stats_current,
+    ua_mapper,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -36,12 +35,10 @@ pub struct CursorPage<T> {
 #[derive(Debug)]
 pub struct MapperProfile {
     pub mapper: ua_mapper::Model,
-    pub mapper_profile: Option<mapper_profile::Model>,
+    pub mapper_fingerprint: Option<JsonValue>,
     pub mapper_stats: Option<mapper_stats_current::Model>,
     pub leaderboard_positions: Vec<leaderboard_position_current::Model>,
     pub charts: Vec<mapper_aggregate_snapshot_weekly::Model>,
-    pub user_fetched_at: Option<DateTime<Utc>>,
-    pub user_raw: Option<JsonValue>,
 }
 
 #[derive(Debug)]

@@ -14,7 +14,6 @@ pub async fn get_mapper(
 ) -> Result<Json<UaMapperProfileDto>, ApiError> {
     let profile = usecases::get_mapper_profile_by_username(
         &state.ua_mappers_repo,
-        &state.mapper_profiles_repo,
         &state.mapper_stats_repo,
         &state.leaderboard_positions_repo,
         &state.mapper_aggregate_snapshots_repo,
@@ -40,7 +39,6 @@ pub async fn get_mapper_by_id(
 ) -> Result<Json<UaMapperProfileDto>, ApiError> {
     let profile = usecases::get_mapper_profile_by_id(
         &state.ua_mappers_repo,
-        &state.mapper_profiles_repo,
         &state.mapper_stats_repo,
         &state.leaderboard_positions_repo,
         &state.mapper_aggregate_snapshots_repo,

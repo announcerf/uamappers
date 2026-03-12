@@ -4,9 +4,8 @@ use crate::features::leaderboards::http::dto::LeaderboardKeyDto;
 use crate::features::mappers::storage::{
     leaderboard_position_current_repo::LeaderboardPositionCurrentRepo,
     mapper_aggregate_snapshot_weekly_repo::MapperAggregateSnapshotWeeklyRepo,
-    mapper_profile_repo::MapperProfileRepo, mapper_stats_current_repo::MapperStatsCurrentRepo,
-    osu_user_beatmapset_repo::OsuUserBeatmapsetRepo, osu_user_repo::OsuUserRepo,
-    ua_mapper_repo::UaMapperRepo,
+    mapper_stats_current_repo::MapperStatsCurrentRepo, osu_user_beatmapset_repo::OsuUserBeatmapsetRepo,
+    osu_user_repo::OsuUserRepo, ua_mapper_repo::UaMapperRepo,
 };
 
 use super::types::{
@@ -48,7 +47,6 @@ pub async fn search_mappers(
 
 pub async fn get_mapper_profile_by_username(
     ua_mappers_repo: &UaMapperRepo,
-    mapper_profiles_repo: &MapperProfileRepo,
     mapper_stats_repo: &MapperStatsCurrentRepo,
     leaderboard_positions_repo: &LeaderboardPositionCurrentRepo,
     snapshots_repo: &MapperAggregateSnapshotWeeklyRepo,
@@ -58,7 +56,6 @@ pub async fn get_mapper_profile_by_username(
     let mapper = ua_mappers_repo.get_by_username(username).await?;
 
     load_mapper_profile(
-        mapper_profiles_repo,
         mapper_stats_repo,
         leaderboard_positions_repo,
         snapshots_repo,
@@ -90,7 +87,6 @@ pub async fn get_mapper_charts_by_username(
 
 pub async fn get_mapper_profile_by_id(
     ua_mappers_repo: &UaMapperRepo,
-    mapper_profiles_repo: &MapperProfileRepo,
     mapper_stats_repo: &MapperStatsCurrentRepo,
     leaderboard_positions_repo: &LeaderboardPositionCurrentRepo,
     snapshots_repo: &MapperAggregateSnapshotWeeklyRepo,
@@ -100,7 +96,6 @@ pub async fn get_mapper_profile_by_id(
     let mapper = ua_mappers_repo.get_by_osu_user_id(osu_user_id).await?;
 
     load_mapper_profile(
-        mapper_profiles_repo,
         mapper_stats_repo,
         leaderboard_positions_repo,
         snapshots_repo,
@@ -169,7 +164,6 @@ pub async fn list_mapper_beatmapsets_by_id(
 }
 
 async fn load_mapper_profile(
-    mapper_profiles_repo: &MapperProfileRepo,
     mapper_stats_repo: &MapperStatsCurrentRepo,
     leaderboard_positions_repo: &LeaderboardPositionCurrentRepo,
     snapshots_repo: &MapperAggregateSnapshotWeeklyRepo,
@@ -180,9 +174,6 @@ async fn load_mapper_profile(
         return Ok(None);
     };
 
-    let mapper_profile = mapper_profiles_repo
-        .get_by_osu_user_id(mapper.osu_user_id)
-        .await?;
     let mapper_stats = mapper_stats_repo
         .get_by_osu_user_id(mapper.osu_user_id)
         .await?;
@@ -195,19 +186,17 @@ async fn load_mapper_profile(
     let user_row = osu_users_repo
         .get_by_osu_user_id(mapper.osu_user_id)
         .await?;
-    let (user_raw, user_fetched_at) = match user_row {
-        Some(row) => (Some(row.raw), Some(row.fetched_at)),
-        None => (None, None),
+    let mapper_fingerprint = match user_row {
+        Some(row) => Some(row.raw),
+        None => None,
     };
 
     Ok(Some(MapperProfile {
         mapper,
-        mapper_profile,
+        mapper_fingerprint,
         mapper_stats,
         leaderboard_positions: order_positions(leaderboard_positions),
         charts,
-        user_fetched_at,
-        user_raw,
     }))
 }
 
