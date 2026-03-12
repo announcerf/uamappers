@@ -4,7 +4,8 @@ use uamappers_api::{
         ingest::storage::repo::ScanStateRepo,
         mappers::storage::{
             beatmap_profile_repo::BeatmapProfileRepo,
-            beatmapset_profile_repo::BeatmapsetProfileRepo, beatmapset_repo::BeatmapsetRepo,
+            beatmapset_extra_repo::BeatmapsetExtraRepo,
+            beatmapset_profile_repo::BeatmapsetProfileRepo,
             beatmapset_snapshot_weekly_repo::BeatmapsetSnapshotWeeklyRepo,
             leaderboard_position_current_repo::LeaderboardPositionCurrentRepo,
             mapper_aggregate_snapshot_weekly_repo::MapperAggregateSnapshotWeeklyRepo,
@@ -53,9 +54,9 @@ pub async fn build_runtime(config: WorkerConfig) -> Result<WorkerRuntime, Worker
         config.clone(),
         MapperEnrichRepos {
             beatmap_profiles_repo: BeatmapProfileRepo::new(db.clone()),
+            beatmapset_extras_repo: BeatmapsetExtraRepo::new(db.clone()),
             beatmapset_profiles_repo: BeatmapsetProfileRepo::new(db.clone()),
             beatmapset_snapshots_repo: BeatmapsetSnapshotWeeklyRepo::new(db.clone()),
-            beatmapsets_repo: BeatmapsetRepo::new(db.clone()),
             leaderboard_positions_repo: LeaderboardPositionCurrentRepo::new(db.clone()),
             mapper_aggregate_snapshots_repo: MapperAggregateSnapshotWeeklyRepo::new(db.clone()),
             mapper_stats_repo: MapperStatsCurrentRepo::new(db.clone()),

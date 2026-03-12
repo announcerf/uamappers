@@ -1,7 +1,7 @@
 #[path = "beatmap/profile.rs"]
 pub mod beatmap_profile;
-#[path = "beatmapset/cache.rs"]
-pub mod beatmapset;
+#[path = "beatmapset/extra.rs"]
+pub mod beatmapset_extra;
 #[path = "beatmapset/profile.rs"]
 pub mod beatmapset_profile;
 #[path = "beatmapset/snapshot_weekly.rs"]
@@ -10,8 +10,6 @@ pub mod beatmapset_snapshot_weekly;
 pub mod leaderboard_position_current;
 #[path = "mapper/aggregate_snapshot_weekly.rs"]
 pub mod mapper_aggregate_snapshot_weekly;
-#[path = "mapper/profile.rs"]
-pub mod mapper_profile;
 #[path = "mapper/stats_current.rs"]
 pub mod mapper_stats_current;
 #[path = "osu/user.rs"]

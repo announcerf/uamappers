@@ -27,10 +27,10 @@ pub async fn persist_beatmapsets_page(
     osu_user_id: i64,
     kind: &str,
 ) -> Result<(), WorkerError> {
-    let txn = job.beatmapsets_repo.db().begin().await?;
+    let txn = job.beatmapset_extras_repo.db().begin().await?;
 
-    job.beatmapsets_repo
-        .upsert_many_with(&txn, page.beatmapsets)
+    job.beatmapset_extras_repo
+        .upsert_many_with(&txn, page.beatmapset_extras)
         .await?;
     job.beatmapset_profiles_repo
         .upsert_many_with(&txn, page.beatmapset_profiles)
