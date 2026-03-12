@@ -76,7 +76,7 @@ down:
 [doc("Rebuild local dev stack without cache")]
 rebuild:
 	docker compose -f {{dev_compose}} -p {{project}} down
-	docker compose -f {{dev_compose}} -p {{project}} build --no-cache
+	docker compose -f {{dev_compose}} -p {{project}} --profile worker build --no-cache
 	docker compose -f {{dev_compose}} -p {{project}} up -d
 
 [doc("Delete all local docker resources for this project (DB data included)")]
@@ -104,6 +104,7 @@ psql:
 
 [doc("Start the worker container (manual profile)")]
 worker-run: up migrate
+	docker compose -f {{dev_compose}} -p {{project}} --profile worker rm -f worker || true
 	docker compose -f {{dev_compose}} -p {{project}} --profile worker up -d worker
 
 [doc("Stop the worker container if it's running")]
