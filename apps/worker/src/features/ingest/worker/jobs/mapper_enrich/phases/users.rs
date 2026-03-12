@@ -1,19 +1,19 @@
 use crate::shared::errors::WorkerError;
 use crate::shared::time::format_utc;
 
-use super::projection::user_to_mapper_profile_row;
-use super::raw::strip_top_level_id;
-use super::types::{MapperEnrich, USERS_SCAN_NAME};
+use super::super::projection::user_to_mapper_profile_row;
+use super::super::raw::strip_top_level_id;
+use super::super::storage::persist_user_profile;
+use super::super::types::{MapperEnrich, USERS_SCAN_NAME};
 
 impl MapperEnrich {
-    pub(super) async fn run_users(&self) -> Result<(), WorkerError> {
+    pub(in super::super) async fn run_users(&self) -> Result<(), WorkerError> {
         let started_at = std::time::Instant::now();
         let mut cursor: Option<(chrono::DateTime<chrono::Utc>, i64)> = None;
-
         let progress_every = self.config.progress_log_every;
-        tracing::info!("users start");
+        let mut users_processed = 0u64;
 
-        let mut users_processed: u64 = 0;
+        tracing::info!("users start");
 
         loop {
             let batch = self
@@ -24,7 +24,7 @@ impl MapperEnrich {
                 break;
             }
 
-            let batch_last = batch
+            cursor = batch
                 .last()
                 .map(|mapper| (mapper.last_seen_at, mapper.osu_user_id));
 
@@ -36,10 +36,9 @@ impl MapperEnrich {
                 let fetched_at = chrono::Utc::now();
                 let profile = user_to_mapper_profile_row(&extended, fetched_at);
 
-                self.persist_user_profile(mapper.osu_user_id, raw, profile, fetched_at)
-                    .await?;
-
+                persist_user_profile(self, mapper.osu_user_id, raw, profile, fetched_at).await?;
                 users_processed = users_processed.saturating_add(1);
+
                 tracing::debug!(
                     job = USERS_SCAN_NAME,
                     osu_user_id = mapper.osu_user_id,
@@ -47,27 +46,26 @@ impl MapperEnrich {
                 );
 
                 if progress_every > 0 && users_processed.is_multiple_of(progress_every) {
-                    let elapsed = started_at.elapsed();
                     tracing::info!(
                         "users processed={} last={} seen={} {}s",
                         users_processed,
                         mapper.osu_user_id,
                         format_utc(mapper.last_seen_at),
-                        elapsed.as_secs()
+                        started_at.elapsed().as_secs()
                     );
                 }
             }
-
-            cursor = batch_last;
         }
 
         self.scan_state_repo
             .upsert_cursor(USERS_SCAN_NAME, None)
             .await?;
         self.scan_state_repo.mark_success(USERS_SCAN_NAME).await?;
-
-        let elapsed = started_at.elapsed();
-        tracing::info!("users done processed={} {}s", users_processed, elapsed.as_secs());
+        tracing::info!(
+            "users done processed={} {}s",
+            users_processed,
+            started_at.elapsed().as_secs()
+        );
         Ok(())
     }
 }

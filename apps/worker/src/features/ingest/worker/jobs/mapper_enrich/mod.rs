@@ -1,14 +1,11 @@
 pub mod run;
 
 pub mod aggregate;
-mod beatmapset;
-pub mod cursor;
-mod persist;
+mod phases;
 pub mod projection;
 pub mod raw;
-mod run_beatmapsets;
-mod run_users;
 pub mod snapshot;
+mod storage;
 mod types;
 
 pub use types::{MapperEnrich, MapperEnrichRepos};
