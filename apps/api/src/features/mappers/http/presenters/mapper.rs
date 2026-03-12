@@ -1,9 +1,10 @@
 use crate::entities::ua_mapper;
+use crate::features::mappers::storage::osu_user_fingerprint::{MapperFingerprint, MapperKudosu};
 use crate::features::mappers::usecases::{MapperCharts, MapperPage, MapperProfile};
 
 use super::super::dto::{
-    MapperChartsPointDto, MapperChartsResponseDto, MapperLeaderboardPositionDto,
-    MapperProfileProjectionDto, MapperStatsCurrentDto, UaMapperDto, UaMapperListResponse,
+    MapperChartsPointDto, MapperChartsResponseDto, MapperDetailsDto, MapperKudosuDto,
+    MapperLeaderboardPositionDto, MapperStatsCurrentDto, UaMapperDto, UaMapperListResponse,
     UaMapperProfileDto,
 };
 
@@ -29,9 +30,10 @@ pub fn mapper_page_to_dto(page: MapperPage) -> UaMapperListResponse {
 }
 
 pub fn mapper_profile_to_dto(profile: MapperProfile) -> UaMapperProfileDto {
+    let mapper = merge_mapper(profile.mapper.clone(), profile.mapper_fingerprint);
+
     UaMapperProfileDto {
-        mapper: ua_mapper_to_dto(profile.mapper.clone()),
-        profile: profile.mapper_profile.map(mapper_profile_projection_to_dto),
+        mapper,
         stats: profile.mapper_stats.map(mapper_stats_to_dto),
         leaderboard_positions: profile
             .leaderboard_positions
@@ -42,8 +44,6 @@ pub fn mapper_profile_to_dto(profile: MapperProfile) -> UaMapperProfileDto {
             osu_user_id: profile.mapper.osu_user_id,
             points: profile.charts,
         }),
-        user: profile.user_raw,
-        user_fetched_at: profile.user_fetched_at,
     }
 }
 
@@ -71,28 +71,58 @@ pub fn mapper_charts_to_dto(charts: MapperCharts) -> MapperChartsResponseDto {
     }
 }
 
-fn mapper_profile_projection_to_dto(
-    model: crate::entities::mapper_profile::Model,
-) -> MapperProfileProjectionDto {
-    MapperProfileProjectionDto {
-        avatar_url: model.avatar_url,
-        country: model.country,
-        country_code: model.country_code,
-        cover_url: model.cover_url,
-        primary_mode: model.primary_mode,
-        join_date: model.join_date,
-        last_visit: model.last_visit,
-        mapping_followers: model.mapping_followers,
-        kudosu_available: model.kudosu_available,
-        kudosu_total: model.kudosu_total,
-        badges: model.badges_json,
-        groups: model.groups_json,
-        is_bng: model.is_bng,
-        is_nat: model.is_nat,
-        is_gmt: model.is_gmt,
-        is_limited_bn: model.is_limited_bn,
-        is_full_bn: model.is_full_bn,
-        cached_at: model.cached_at,
+fn merge_mapper(
+    mapper: crate::entities::ua_mapper::Model,
+    fingerprint: Option<serde_json::Value>,
+) -> MapperDetailsDto {
+    let fingerprint = fingerprint
+        .as_ref()
+        .and_then(MapperFingerprint::from_raw)
+        .unwrap_or_else(|| fallback_fingerprint(&mapper));
+
+    MapperDetailsDto {
+        osu_user_id: mapper.osu_user_id,
+        username: mapper.username,
+        country: fingerprint.country,
+        country_code: mapper.country_code,
+        avatar_url: fingerprint.avatar_url,
+        cover: fingerprint.cover,
+        badges: fingerprint.badges,
+        groups: fingerprint.groups,
+        primary_mode: fingerprint.primary_mode,
+        is_bng: fingerprint.is_bng,
+        is_nat: fingerprint.is_nat,
+        is_gmt: fingerprint.is_gmt,
+        is_probationary_bn: fingerprint.is_probationary_bn,
+        is_full_bn: fingerprint.is_full_bn,
+        cached_at: fingerprint.cached_at,
+        first_seen_at: mapper.first_seen_at,
+        last_seen_at: mapper.last_seen_at,
+        updated_at: mapper.updated_at,
+    }
+}
+
+fn fallback_fingerprint(mapper: &crate::entities::ua_mapper::Model) -> MapperFingerprint {
+    MapperFingerprint {
+        username: mapper.username.clone(),
+        country: String::new(),
+        country_code: mapper.country_code.clone(),
+        avatar_url: String::new(),
+        cover: serde_json::Value::Null,
+        primary_mode: String::new(),
+        mapping_followers: 0,
+        kudosu: MapperKudosu {
+            total: 0,
+            available: 0,
+        },
+        badges: serde_json::json!([]),
+        groups: serde_json::json!([]),
+        is_bng: false,
+        is_nat: false,
+        is_gmt: false,
+        is_probationary_bn: false,
+        is_full_bn: false,
+        cached_at: mapper.updated_at,
     }
 }
 
@@ -124,7 +154,10 @@ fn mapper_stats_to_dto(
         last_mapset_updated_at: model.last_mapset_updated_at,
         main_mode: model.main_mode,
         mapping_followers: model.mapping_followers,
-        kudosu_total: model.kudosu_total,
+        kudosu: MapperKudosuDto {
+            total: model.kudosu_total,
+            available: model.kudosu_available,
+        },
         has_ranked: model.has_ranked,
         has_loved: model.has_loved,
         has_guest: model.has_guest,

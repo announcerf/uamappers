@@ -36,39 +36,43 @@ pub struct UaMapperSearchQuery {
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UaMapperProfileDto {
-    pub mapper: UaMapperDto,
-    pub profile: Option<MapperProfileProjectionDto>,
+    pub mapper: MapperDetailsDto,
     pub stats: Option<MapperStatsCurrentDto>,
     pub leaderboard_positions: Vec<MapperLeaderboardPositionDto>,
     pub charts: MapperChartsResponseDto,
-    #[schema(value_type = Object)]
-    pub user: Option<serde_json::Value>,
-    pub user_fetched_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct MapperProfileProjectionDto {
-    pub avatar_url: String,
+pub struct MapperDetailsDto {
+    pub osu_user_id: i64,
+    pub username: String,
     pub country: String,
     pub country_code: String,
-    pub cover_url: String,
-    pub primary_mode: String,
-    pub join_date: chrono::DateTime<chrono::Utc>,
-    pub last_visit: Option<chrono::DateTime<chrono::Utc>>,
-    pub mapping_followers: i32,
-    pub kudosu_available: i32,
-    pub kudosu_total: i32,
+    pub avatar_url: String,
+    #[schema(value_type = Object)]
+    pub cover: serde_json::Value,
     #[schema(value_type = Object)]
     pub badges: serde_json::Value,
     #[schema(value_type = Object)]
     pub groups: serde_json::Value,
+    pub primary_mode: String,
     pub is_bng: bool,
     pub is_nat: bool,
     pub is_gmt: bool,
-    pub is_limited_bn: bool,
+    pub is_probationary_bn: bool,
     pub is_full_bn: bool,
     pub cached_at: chrono::DateTime<chrono::Utc>,
+    pub first_seen_at: chrono::DateTime<chrono::Utc>,
+    pub last_seen_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MapperKudosuDto {
+    pub total: i32,
+    pub available: i32,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -98,7 +102,7 @@ pub struct MapperStatsCurrentDto {
     pub last_mapset_updated_at: Option<chrono::DateTime<chrono::Utc>>,
     pub main_mode: String,
     pub mapping_followers: i32,
-    pub kudosu_total: i32,
+    pub kudosu: MapperKudosuDto,
     pub has_ranked: bool,
     pub has_loved: bool,
     pub has_guest: bool,
