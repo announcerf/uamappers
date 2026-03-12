@@ -7,9 +7,8 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub osu_beatmap_id: i64,
     pub osu_beatmapset_id: i64,
-    pub creator_id: i64,
     pub version: String,
-    pub mode: String,
+    pub mode: i16,
     pub stars: f32,
     pub ar: f32,
     pub cs: f32,
@@ -25,11 +24,10 @@ pub struct Model {
     pub count_sliders: i32,
     pub count_spinners: i32,
     pub owners_json: JsonValue,
-    pub status: String,
+    pub status: i16,
     pub is_scoreable: bool,
     pub last_updated: DateTimeUtc,
     pub cached_at: DateTimeUtc,
-    pub created_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }
 

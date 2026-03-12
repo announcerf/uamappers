@@ -11,9 +11,8 @@ use crate::entities::beatmap_profile;
 pub struct NewBeatmapProfileRow {
     pub osu_beatmap_id: i64,
     pub osu_beatmapset_id: i64,
-    pub creator_id: i64,
     pub version: String,
-    pub mode: String,
+    pub mode: i16,
     pub stars: f32,
     pub ar: f32,
     pub cs: f32,
@@ -29,7 +28,7 @@ pub struct NewBeatmapProfileRow {
     pub count_sliders: i32,
     pub count_spinners: i32,
     pub owners_json: sea_orm::JsonValue,
-    pub status: String,
+    pub status: i16,
     pub is_scoreable: bool,
     pub last_updated: chrono::DateTime<Utc>,
     pub cached_at: chrono::DateTime<Utc>,
@@ -90,7 +89,6 @@ impl BeatmapProfileRepo {
                     OnConflict::column(beatmap_profile::Column::OsuBeatmapId)
                         .update_columns([
                             beatmap_profile::Column::OsuBeatmapsetId,
-                            beatmap_profile::Column::CreatorId,
                             beatmap_profile::Column::Version,
                             beatmap_profile::Column::Mode,
                             beatmap_profile::Column::Stars,
@@ -148,7 +146,6 @@ impl BeatmapProfileRepo {
         beatmap_profile::ActiveModel {
             osu_beatmap_id: Set(row.osu_beatmap_id),
             osu_beatmapset_id: Set(row.osu_beatmapset_id),
-            creator_id: Set(row.creator_id),
             version: Set(row.version),
             mode: Set(row.mode),
             stars: Set(row.stars),
@@ -170,7 +167,6 @@ impl BeatmapProfileRepo {
             is_scoreable: Set(row.is_scoreable),
             last_updated: Set(row.last_updated),
             cached_at: Set(row.cached_at),
-            created_at: Set(now),
             updated_at: Set(now),
         }
     }
