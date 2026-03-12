@@ -4,9 +4,10 @@ use chrono::Utc;
 use rosu_v2::model::beatmap::BeatmapsetExtended;
 use rosu_v2::model::user::UserExtended;
 use serde_json::json;
-use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::projection::{
-    maps_to_profile_rows, mapset_to_profile_row, user_to_mapper_profile_row,
+use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::projection::beatmapsets::{
+    maps_to_profile_rows, mapset_to_profile_row,
 };
+use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::projection::user_to_mapper_profile_row;
 
 #[test]
 fn user_projection_keeps_only_required_fields() {
