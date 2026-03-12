@@ -7,7 +7,7 @@ use serde_json::json;
 use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::projection::beatmapsets::{
     maps_to_profile_rows, mapset_to_profile_row,
 };
-use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::projection::user_to_mapper_profile_row;
+use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::projection::user_to_mapper_fingerprint;
 
 #[test]
 fn user_projection_keeps_only_required_fields() {
@@ -76,17 +76,17 @@ fn user_projection_keeps_only_required_fields() {
     }))
     .expect("user json should deserialize");
 
-    let row = user_to_mapper_profile_row(&user, cached_at);
+    let row = user_to_mapper_fingerprint(&user, cached_at);
 
-    assert_eq!(row.osu_user_id, 42);
     assert_eq!(row.username, "Mapper");
     assert_eq!(row.country_code, "UA");
     assert_eq!(row.primary_mode, "osu");
     assert_eq!(row.mapping_followers, 99);
-    assert_eq!(row.kudosu_total, 11);
+    assert_eq!(row.kudosu.total, 11);
     assert!(row.is_bng);
     assert!(row.is_gmt);
     assert!(row.is_full_bn);
+    assert!(!row.is_probationary_bn);
 }
 
 #[test]
