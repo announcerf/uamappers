@@ -1,5 +1,6 @@
 use chrono::Utc;
 use serde_json::json;
+use uamappers_api::features::mappers::storage::codes::{genre_code, language_code, mode_code, status_code};
 use uamappers_api::features::beatmapsets::http::presenters::beatmapset_details_to_dto;
 
 #[test]
@@ -8,17 +9,15 @@ fn beatmapset_details_to_dto_builds_headline_and_difficulty_sections() {
     let details = uamappers_api::features::beatmapsets::usecases::BeatmapsetDetails {
         beatmapset: uamappers_api::entities::beatmapset_profile::Model {
             osu_beatmapset_id: 1000,
-            creator_id: 42,
-            creator_name: "Mapper".to_string(),
             artist: "Artist".to_string(),
             artist_unicode: None,
             title: "Title".to_string(),
             title_unicode: None,
             source: String::new(),
             tags: String::new(),
-            genre: Some("anime".to_string()),
-            language: Some("japanese".to_string()),
-            status: "ranked".to_string(),
+            genre: Some(genre_code("anime")),
+            language: Some(language_code("japanese")),
+            status: status_code("ranked"),
             submitted_date: Some(now),
             ranked_date: Some(now),
             last_updated: now,
@@ -41,17 +40,22 @@ fn beatmapset_details_to_dto_builds_headline_and_difficulty_sections() {
             card_url: "card".to_string(),
             preview_url: "preview".to_string(),
             bpm: 180.0,
-            difficulty_count: 1,
             cached_at: now,
-            created_at: now,
             updated_at: now,
         },
+        extra: Some(uamappers_api::entities::beatmapset_extra::Model {
+            osu_beatmapset_id: 1000,
+            creator_id: 42,
+            creator_name: "Mapper".to_string(),
+            ratings_json: json!([]),
+            anime_cover: None,
+            updated_at: now,
+        }),
         beatmaps: vec![uamappers_api::entities::beatmap_profile::Model {
             osu_beatmap_id: 2000,
             osu_beatmapset_id: 1000,
-            creator_id: 42,
             version: "Insane".to_string(),
-            mode: "osu".to_string(),
+            mode: mode_code("osu"),
             stars: 5.3,
             ar: 9.0,
             cs: 4.0,
@@ -67,11 +71,10 @@ fn beatmapset_details_to_dto_builds_headline_and_difficulty_sections() {
             count_sliders: 50,
             count_spinners: 2,
             owners_json: json!([{ "id": 42, "username": "Mapper" }]),
-            status: "ranked".to_string(),
+            status: status_code("ranked"),
             is_scoreable: true,
             last_updated: now,
             cached_at: now,
-            created_at: now,
             updated_at: now,
         }],
         charts: vec![],

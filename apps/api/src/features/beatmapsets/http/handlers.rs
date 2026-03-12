@@ -41,6 +41,7 @@ pub async fn get_beatmapset_details(
     Path(osu_beatmapset_id): Path<i64>,
 ) -> Result<Json<BeatmapsetDetailsDto>, ApiError> {
     let details = usecases::get_beatmapset_details(
+        &state.beatmapset_extras_repo,
         &state.beatmapset_profiles_repo,
         &state.beatmap_profiles_repo,
         &state.beatmapset_snapshots_repo,

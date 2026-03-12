@@ -1,3 +1,5 @@
+use crate::features::mappers::storage::codes::{genre_str, language_str, mode_str, status_str};
+
 use super::super::dto::{
     BeatmapDifficultyDetailDto, BeatmapDifficultyOverviewDto, BeatmapsetAnalyticsDto,
     BeatmapsetDetailsDto, BeatmapsetHeaderDto, BeatmapsetHeadlineStatsDto,
@@ -7,6 +9,11 @@ use super::charts::beatmapset_charts_to_dto;
 pub fn beatmapset_details_to_dto(
     details: crate::features::beatmapsets::usecases::BeatmapsetDetails,
 ) -> BeatmapsetDetailsDto {
+    let creator_name = details
+        .extra
+        .as_ref()
+        .map(|row| row.creator_name.clone())
+        .unwrap_or_default();
     let headline = build_headline_stats(&details.beatmapset, &details.beatmaps);
     let difficulty_overview = details
         .beatmaps
@@ -14,7 +21,7 @@ pub fn beatmapset_details_to_dto(
         .map(|map| BeatmapDifficultyOverviewDto {
             osu_beatmap_id: map.osu_beatmap_id,
             version: map.version.clone(),
-            mode: map.mode.clone(),
+            mode: mode_str(map.mode).to_string(),
             stars: map.stars,
             ar: map.ar,
             cs: map.cs,
@@ -33,9 +40,9 @@ pub fn beatmapset_details_to_dto(
         .map(|map| BeatmapDifficultyDetailDto {
             osu_beatmap_id: map.osu_beatmap_id,
             version: map.version.clone(),
-            mode: map.mode.clone(),
+            mode: mode_str(map.mode).to_string(),
             stars: map.stars,
-            status: map.status.clone(),
+            status: status_str(map.status).to_string(),
             ar: map.ar,
             cs: map.cs,
             od: map.od,
@@ -63,10 +70,14 @@ pub fn beatmapset_details_to_dto(
             title_unicode: details.beatmapset.title_unicode,
             artist: details.beatmapset.artist,
             artist_unicode: details.beatmapset.artist_unicode,
-            creator_name: details.beatmapset.creator_name,
-            status: details.beatmapset.status,
-            genre: details.beatmapset.genre,
-            language: details.beatmapset.language,
+            creator_name,
+            status: status_str(details.beatmapset.status).to_string(),
+            genre: details.beatmapset.genre.and_then(genre_str).map(str::to_string),
+            language: details
+                .beatmapset
+                .language
+                .and_then(language_str)
+                .map(str::to_string),
             source: details.beatmapset.source,
             tags: details.beatmapset.tags,
             cover_url: details.beatmapset.cover_url,
@@ -118,7 +129,7 @@ fn build_headline_stats(
         favourite_count: beatmapset.favourite_count,
         rating: beatmapset.rating,
         fav_play_ratio: pass_rate(beatmapset.favourite_count, beatmapset.playcount),
-        difficulty_count: beatmapset.difficulty_count,
+        difficulty_count: beatmaps.len() as i32,
         avg_pass_rate,
         avg_stars,
     }

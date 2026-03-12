@@ -22,6 +22,8 @@ pub async fn list_mapper_beatmapsets(
     let result = usecases::list_mapper_beatmapsets_by_username(
         &state.ua_mappers_repo,
         &state.osu_user_beatmapsets_repo,
+        &state.beatmapset_extras_repo,
+        &state.beatmapset_profiles_repo,
         &user,
         query.kind.as_str(),
         page,
@@ -51,6 +53,8 @@ pub async fn list_mapper_beatmapsets_by_id(
 
     let result = usecases::list_mapper_beatmapsets_by_id(
         &state.osu_user_beatmapsets_repo,
+        &state.beatmapset_extras_repo,
+        &state.beatmapset_profiles_repo,
         osu_user_id,
         query.kind.as_str(),
         page,

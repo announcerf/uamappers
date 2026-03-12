@@ -98,7 +98,7 @@ pub async fn get_mapper_charts_by_id() {}
     get,
     path = "/mappers/{user}/beatmapsets",
     tag = "Mappers::Beatmapsets",
-    summary = "List cached beatmapsets for mapper (by username)",
+    summary = "List mapper beatmapsets (by username)",
     params(
         ("user" = String, Path, description = "osu! username"),
         BeatmapsetListQuery
@@ -116,7 +116,7 @@ pub async fn list_mapper_beatmapsets() {}
     get,
     path = "/mappers/by-id/{osu_user_id}/beatmapsets",
     tag = "Mappers::BeatmapsetsById",
-    summary = "List cached beatmapsets for mapper (by osu user id)",
+    summary = "List mapper beatmapsets (by osu user id)",
     params(
         ("osu_user_id" = i64, Path, description = "osu! user id"),
         BeatmapsetListQuery

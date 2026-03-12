@@ -4,8 +4,9 @@ use chrono::Utc;
 use rosu_v2::model::beatmap::BeatmapsetExtended;
 use rosu_v2::model::user::UserExtended;
 use serde_json::json;
+use uamappers_api::features::mappers::storage::codes::{genre_code, language_code, mode_code, status_code};
 use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::projection::beatmapsets::{
-    maps_to_profile_rows, mapset_to_profile_row,
+    maps_to_profile_rows, mapset_to_extra_row, mapset_to_profile_row,
 };
 use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::projection::user_to_mapper_fingerprint;
 
@@ -177,20 +178,20 @@ fn beatmapset_projection_flattens_mapset_and_nested_maps() {
     }))
     .expect("mapset json should deserialize");
 
+    let mapset_extra = mapset_to_extra_row(&mapset);
     let mapset_row = mapset_to_profile_row(&mapset, cached_at);
     let map_rows = maps_to_profile_rows(&mapset, cached_at);
 
+    assert_eq!(mapset_extra.creator_name, "Mapper");
     assert_eq!(mapset_row.osu_beatmapset_id, 1000);
-    assert_eq!(mapset_row.creator_name, "Mapper");
-    assert_eq!(mapset_row.genre.as_deref(), Some("anime"));
-    assert_eq!(mapset_row.language.as_deref(), Some("japanese"));
-    assert_eq!(mapset_row.status, "ranked");
-    assert_eq!(mapset_row.difficulty_count, 1);
+    assert_eq!(mapset_row.genre, Some(genre_code("anime")));
+    assert_eq!(mapset_row.language, Some(language_code("japanese")));
+    assert_eq!(mapset_row.status, status_code("ranked"));
     assert_eq!(mapset_row.nominations_current, 1);
 
     assert_eq!(map_rows.len(), 1);
     assert_eq!(map_rows[0].osu_beatmap_id, 2001);
-    assert_eq!(map_rows[0].mode, "osu");
-    assert_eq!(map_rows[0].status, "ranked");
+    assert_eq!(map_rows[0].mode, mode_code("osu"));
+    assert_eq!(map_rows[0].status, status_code("ranked"));
     assert_eq!(map_rows[0].count_circles, 100);
 }
