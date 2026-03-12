@@ -193,7 +193,6 @@ pub struct BeatmapsetDto {
     pub tags: String,
     pub cover_url: String,
     pub card_url: String,
-    pub preview_url: String,
     pub submitted_date: Option<chrono::DateTime<chrono::Utc>>,
     pub ranked_date: Option<chrono::DateTime<chrono::Utc>>,
     pub osu_last_updated: chrono::DateTime<chrono::Utc>,

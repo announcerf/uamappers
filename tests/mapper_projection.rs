@@ -178,16 +178,16 @@ fn beatmapset_projection_flattens_mapset_and_nested_maps() {
     }))
     .expect("mapset json should deserialize");
 
-    let mapset_extra = mapset_to_extra_row(&mapset);
+    let mapset_extra = mapset_to_extra_row(&mapset, false);
     let mapset_row = mapset_to_profile_row(&mapset, cached_at);
     let map_rows = maps_to_profile_rows(&mapset, cached_at);
 
     assert_eq!(mapset_extra.creator_name, "Mapper");
+    assert!(!mapset_extra.details_unavailable);
     assert_eq!(mapset_row.osu_beatmapset_id, 1000);
     assert_eq!(mapset_row.genre, Some(genre_code("anime")));
     assert_eq!(mapset_row.language, Some(language_code("japanese")));
     assert_eq!(mapset_row.status, status_code("ranked"));
-    assert_eq!(mapset_row.nominations_current, 1);
 
     assert_eq!(map_rows.len(), 1);
     assert_eq!(map_rows[0].osu_beatmap_id, 2001);

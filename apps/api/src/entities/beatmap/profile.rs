@@ -25,7 +25,6 @@ pub struct Model {
     pub count_spinners: i32,
     pub owners_json: JsonValue,
     pub status: i16,
-    pub is_scoreable: bool,
     pub last_updated: DateTimeUtc,
     pub cached_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,

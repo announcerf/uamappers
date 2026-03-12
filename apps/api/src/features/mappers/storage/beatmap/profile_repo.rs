@@ -29,7 +29,6 @@ pub struct NewBeatmapProfileRow {
     pub count_spinners: i32,
     pub owners_json: sea_orm::JsonValue,
     pub status: i16,
-    pub is_scoreable: bool,
     pub last_updated: chrono::DateTime<Utc>,
     pub cached_at: chrono::DateTime<Utc>,
 }
@@ -107,7 +106,6 @@ impl BeatmapProfileRepo {
                             beatmap_profile::Column::CountSpinners,
                             beatmap_profile::Column::OwnersJson,
                             beatmap_profile::Column::Status,
-                            beatmap_profile::Column::IsScoreable,
                             beatmap_profile::Column::LastUpdated,
                             beatmap_profile::Column::CachedAt,
                             beatmap_profile::Column::UpdatedAt,
@@ -164,7 +162,6 @@ impl BeatmapProfileRepo {
             count_spinners: Set(row.count_spinners),
             owners_json: Set(row.owners_json),
             status: Set(row.status),
-            is_scoreable: Set(row.is_scoreable),
             last_updated: Set(row.last_updated),
             cached_at: Set(row.cached_at),
             updated_at: Set(now),

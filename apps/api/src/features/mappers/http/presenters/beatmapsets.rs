@@ -35,7 +35,6 @@ fn beatmapset_to_dto(model: crate::features::mappers::usecases::BeatmapsetListIt
         tags: model.profile.tags,
         cover_url: model.profile.cover_url,
         card_url: model.profile.card_url,
-        preview_url: model.profile.preview_url,
         submitted_date: model.profile.submitted_date,
         ranked_date: model.profile.ranked_date,
         osu_last_updated: model.profile.last_updated,

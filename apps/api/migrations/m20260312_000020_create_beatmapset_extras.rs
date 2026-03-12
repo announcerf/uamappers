@@ -28,12 +28,14 @@ impl MigrationTrait for Migration {
                             .not_null(),
                     )
                     .col(
-                        ColumnDef::new(BeatmapsetExtras::RatingsJson)
-                            .json_binary()
-                            .not_null()
-                            .default(Expr::cust("'[]'::jsonb")),
+                        ColumnDef::new(BeatmapsetExtras::AnimeCover).text()
                     )
-                    .col(ColumnDef::new(BeatmapsetExtras::AnimeCover).text())
+                    .col(
+                        ColumnDef::new(BeatmapsetExtras::DetailsUnavailable)
+                            .boolean()
+                            .not_null()
+                            .default(false),
+                    )
                     .col(
                         ColumnDef::new(BeatmapsetExtras::UpdatedAt)
                             .timestamp_with_time_zone()
@@ -52,20 +54,20 @@ impl MigrationTrait for Migration {
                     osu_beatmapset_id,
                     creator_id,
                     creator_name,
-                    ratings_json,
                     anime_cover,
+                    details_unavailable,
                     updated_at
                 )
                 SELECT
                     bp.osu_beatmapset_id,
                     bp.creator_id,
                     bp.creator_name,
-                    COALESCE(b.raw->'ratings', '[]'::jsonb),
                     NULLIF(COALESCE(
                         b.raw->>'animeCover',
                         b.raw->>'anime_cover',
                         ''
                     ), ''),
+                    false,
                     CURRENT_TIMESTAMP
                 FROM beatmapset_profiles bp
                 LEFT JOIN beatmapsets b
@@ -73,8 +75,8 @@ impl MigrationTrait for Migration {
                 ON CONFLICT (osu_beatmapset_id) DO UPDATE SET
                     creator_id = EXCLUDED.creator_id,
                     creator_name = EXCLUDED.creator_name,
-                    ratings_json = EXCLUDED.ratings_json,
                     anime_cover = EXCLUDED.anime_cover,
+                    details_unavailable = EXCLUDED.details_unavailable,
                     updated_at = CURRENT_TIMESTAMP
                 "#,
             )
@@ -101,7 +103,7 @@ enum BeatmapsetExtras {
     OsuBeatmapsetId,
     CreatorId,
     CreatorName,
-    RatingsJson,
     AnimeCover,
+    DetailsUnavailable,
     UpdatedAt,
 }

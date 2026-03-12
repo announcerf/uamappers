@@ -82,7 +82,6 @@ pub fn beatmapset_details_to_dto(
             tags: details.beatmapset.tags,
             cover_url: details.beatmapset.cover_url,
             card_url: details.beatmapset.card_url,
-            preview_url: details.beatmapset.preview_url,
             submitted_date: details.beatmapset.submitted_date,
             ranked_date: details.beatmapset.ranked_date,
             last_updated: details.beatmapset.last_updated,

@@ -12,7 +12,6 @@ use uamappers_api::features::mappers::storage::{
 use super::shared::{
     genre_to_str, language_to_str, mode_to_str, offset_to_utc, rank_status_to_str, to_json_array,
 };
-use crate::features::ingest::worker::jobs::mapper_enrich::raw::strip_mapset_raw;
 use crate::features::ingest::worker::jobs::mapper_enrich::snapshot::mapset_to_snapshot_row;
 
 pub struct BeatmapsetsPersistPage {
@@ -22,6 +21,11 @@ pub struct BeatmapsetsPersistPage {
     pub beatmap_profiles: Vec<NewBeatmapProfileRow>,
     pub beatmap_ids_by_mapset: Vec<(i64, Vec<i64>)>,
     pub beatmapset_ids: Vec<i64>,
+}
+
+pub struct PersistedBeatmapset {
+    pub mapset: BeatmapsetExtended,
+    pub details_unavailable: bool,
 }
 
 pub fn kind_to_str(kind: UserBeatmapsetsKind) -> &'static str {
@@ -36,7 +40,7 @@ pub fn kind_to_str(kind: UserBeatmapsetsKind) -> &'static str {
     }
 }
 
-pub fn build_page_payload(page: &[BeatmapsetExtended]) -> BeatmapsetsPersistPage {
+pub fn build_page_payload(page: &[PersistedBeatmapset]) -> BeatmapsetsPersistPage {
     let mut beatmapset_extras = Vec::new();
     let mut beatmapset_profiles = Vec::new();
     let mut beatmapset_snapshots = Vec::new();
@@ -47,8 +51,9 @@ pub fn build_page_payload(page: &[BeatmapsetExtended]) -> BeatmapsetsPersistPage
     let weekly_snapshot =
         crate::features::ingest::worker::jobs::mapper_enrich::snapshot::snapshot_week(cached_at);
 
-    for mapset in page {
-        beatmapset_extras.push(mapset_to_extra_row(mapset));
+    for item in page {
+        let mapset = &item.mapset;
+        beatmapset_extras.push(mapset_to_extra_row(mapset, item.details_unavailable));
         beatmapset_ids.push(mapset.mapset_id as i64);
         beatmapset_profiles.push(mapset_to_profile_row(mapset, cached_at));
         beatmapset_snapshots.push(mapset_to_snapshot_row(mapset, weekly_snapshot));
@@ -69,23 +74,16 @@ pub fn build_page_payload(page: &[BeatmapsetExtended]) -> BeatmapsetsPersistPage
     }
 }
 
-pub fn mapset_to_extra_row(mapset: &BeatmapsetExtended) -> NewBeatmapsetExtraRow {
-    let raw = serde_json::to_value(mapset)
-        .map(strip_mapset_raw)
-        .unwrap_or(serde_json::Value::Null);
-
+pub fn mapset_to_extra_row(
+    mapset: &BeatmapsetExtended,
+    details_unavailable: bool,
+) -> NewBeatmapsetExtraRow {
     NewBeatmapsetExtraRow {
         osu_beatmapset_id: mapset.mapset_id as i64,
         creator_id: mapset.creator_id as i64,
         creator_name: mapset.creator_name.to_string(),
-        ratings_json: raw
-            .get("ratings")
-            .cloned()
-            .unwrap_or_else(|| serde_json::json!([])),
-        anime_cover: raw
-            .get("animeCover")
-            .and_then(serde_json::Value::as_str)
-            .map(str::to_string),
+        anime_cover: None,
+        details_unavailable,
     }
 }
 
@@ -93,9 +91,6 @@ pub fn mapset_to_profile_row(
     mapset: &BeatmapsetExtended,
     cached_at: chrono::DateTime<chrono::Utc>,
 ) -> NewBeatmapsetProfileRow {
-    let hype_current = mapset.hype.map(|h| h.current as i32).unwrap_or_default();
-    let hype_required = mapset.hype.map(|h| h.required as i32).unwrap_or_default();
-
     NewBeatmapsetProfileRow {
         osu_beatmapset_id: mapset.mapset_id as i64,
         artist: mapset.artist.clone(),
@@ -110,11 +105,6 @@ pub fn mapset_to_profile_row(
         submitted_date: mapset.submitted_date.map(offset_to_utc),
         ranked_date: mapset.ranked_date.map(offset_to_utc),
         last_updated: offset_to_utc(mapset.last_updated),
-        discussion_enabled: mapset.discussion_enabled,
-        discussion_locked: mapset.discussion_locked,
-        can_be_hyped: mapset.can_be_hyped,
-        is_scoreable: mapset.is_scoreable,
-        download_disabled: mapset.availability.download_disabled,
         nsfw: mapset.nsfw,
         video: mapset.video,
         storyboard: mapset.storyboard,
@@ -122,12 +112,8 @@ pub fn mapset_to_profile_row(
         playcount: mapset.playcount as i64,
         favourite_count: mapset.favourite_count as i64,
         rating: mapset.rating,
-        hype_current,
-        hype_required,
-        nominations_current: mapset.nominations_summary.current as i32,
         cover_url: mapset.covers.cover.clone(),
         card_url: mapset.covers.card.clone(),
-        preview_url: mapset.preview_url.clone(),
         bpm: mapset.bpm,
         cached_at,
     }
@@ -171,7 +157,6 @@ fn map_to_profile_row(
         count_spinners: map.count_spinners as i32,
         owners_json: to_json_array(map.owners.as_ref()),
         status: status_code(rank_status_to_str(map.status)),
-        is_scoreable: map.is_scoreable,
         last_updated: offset_to_utc(map.last_updated),
         cached_at,
     }

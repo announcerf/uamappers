@@ -123,7 +123,6 @@ fn beatmapset_details_and_leaderboard_key_serialize_in_camel_case() {
             tags: String::new(),
             cover_url: "cover".to_string(),
             card_url: "card".to_string(),
-            preview_url: "preview".to_string(),
             submitted_date: Some(now),
             ranked_date: Some(now),
             last_updated: now,
