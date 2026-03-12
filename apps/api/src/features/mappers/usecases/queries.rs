@@ -1,16 +1,18 @@
 use sea_orm::DbErr;
 
-use crate::features::leaderboards::http::dto::LeaderboardKeyDto;
 use crate::features::mappers::storage::{
-    leaderboard_position_current_repo::LeaderboardPositionCurrentRepo,
+    beatmapset_extra_repo::BeatmapsetExtraRepo, beatmapset_profile_repo::BeatmapsetProfileRepo,
     mapper_aggregate_snapshot_weekly_repo::MapperAggregateSnapshotWeeklyRepo,
-    mapper_stats_current_repo::MapperStatsCurrentRepo, osu_user_beatmapset_repo::OsuUserBeatmapsetRepo,
-    osu_user_repo::OsuUserRepo, ua_mapper_repo::UaMapperRepo,
+    osu_user_beatmapset_repo::OsuUserBeatmapsetRepo, ua_mapper_repo::UaMapperRepo,
 };
 
+use super::chart_points::build_mapper_chart_points;
+use super::profile::load_mapper_profile;
 use super::types::{
-    BeatmapsetPage, CursorInput, MapperCharts, MapperPage, MapperProfile, PageInput,
+    BeatmapsetListItem, BeatmapsetPage, CursorInput, MapperCharts, MapperPage, MapperProfile,
+    PageInput,
 };
+use super::MapperProfileReadRepos;
 
 pub async fn list_mappers(
     ua_mappers_repo: &UaMapperRepo,
@@ -47,22 +49,12 @@ pub async fn search_mappers(
 
 pub async fn get_mapper_profile_by_username(
     ua_mappers_repo: &UaMapperRepo,
-    mapper_stats_repo: &MapperStatsCurrentRepo,
-    leaderboard_positions_repo: &LeaderboardPositionCurrentRepo,
-    snapshots_repo: &MapperAggregateSnapshotWeeklyRepo,
-    osu_users_repo: &OsuUserRepo,
+    read_repos: MapperProfileReadRepos<'_>,
     username: &str,
 ) -> Result<Option<MapperProfile>, DbErr> {
     let mapper = ua_mappers_repo.get_by_username(username).await?;
 
-    load_mapper_profile(
-        mapper_stats_repo,
-        leaderboard_positions_repo,
-        snapshots_repo,
-        osu_users_repo,
-        mapper,
-    )
-    .await
+    load_mapper_profile(read_repos, mapper).await
 }
 
 pub async fn get_mapper_charts_by_username(
@@ -81,28 +73,18 @@ pub async fn get_mapper_charts_by_username(
 
     Ok(Some(MapperCharts {
         osu_user_id: mapper.osu_user_id,
-        points,
+        points: build_mapper_chart_points(points),
     }))
 }
 
 pub async fn get_mapper_profile_by_id(
     ua_mappers_repo: &UaMapperRepo,
-    mapper_stats_repo: &MapperStatsCurrentRepo,
-    leaderboard_positions_repo: &LeaderboardPositionCurrentRepo,
-    snapshots_repo: &MapperAggregateSnapshotWeeklyRepo,
-    osu_users_repo: &OsuUserRepo,
+    read_repos: MapperProfileReadRepos<'_>,
     osu_user_id: i64,
 ) -> Result<Option<MapperProfile>, DbErr> {
     let mapper = ua_mappers_repo.get_by_osu_user_id(osu_user_id).await?;
 
-    load_mapper_profile(
-        mapper_stats_repo,
-        leaderboard_positions_repo,
-        snapshots_repo,
-        osu_users_repo,
-        mapper,
-    )
-    .await
+    load_mapper_profile(read_repos, mapper).await
 }
 
 pub async fn get_mapper_charts_by_id(
@@ -121,13 +103,15 @@ pub async fn get_mapper_charts_by_id(
 
     Ok(Some(MapperCharts {
         osu_user_id: mapper.osu_user_id,
-        points,
+        points: build_mapper_chart_points(points),
     }))
 }
 
 pub async fn list_mapper_beatmapsets_by_username(
     ua_mappers_repo: &UaMapperRepo,
     osu_user_beatmapsets_repo: &OsuUserBeatmapsetRepo,
+    beatmapset_extras_repo: &BeatmapsetExtraRepo,
+    beatmapset_profiles_repo: &BeatmapsetProfileRepo,
     username: &str,
     kind: &str,
     page: PageInput,
@@ -139,21 +123,35 @@ pub async fn list_mapper_beatmapsets_by_username(
     };
 
     let beatmapsets =
-        list_mapper_beatmapsets_by_id(osu_user_beatmapsets_repo, mapper.osu_user_id, kind, page)
-            .await?;
+        list_mapper_beatmapsets_by_id(
+            osu_user_beatmapsets_repo,
+            beatmapset_extras_repo,
+            beatmapset_profiles_repo,
+            mapper.osu_user_id,
+            kind,
+            page,
+        )
+        .await?;
 
     Ok(Some(beatmapsets))
 }
 
 pub async fn list_mapper_beatmapsets_by_id(
     osu_user_beatmapsets_repo: &OsuUserBeatmapsetRepo,
+    beatmapset_extras_repo: &BeatmapsetExtraRepo,
+    beatmapset_profiles_repo: &BeatmapsetProfileRepo,
     osu_user_id: i64,
     kind: &str,
     page: PageInput,
 ) -> Result<BeatmapsetPage, DbErr> {
-    let (items, total) = osu_user_beatmapsets_repo
-        .list_beatmapsets(osu_user_id, kind, page.limit, page.offset)
+    let (ids, total) = osu_user_beatmapsets_repo
+        .list_beatmapset_ids(osu_user_id, kind, page.limit, page.offset)
         .await?;
+    let items = beatmapset_profiles_repo
+        .list_by_osu_beatmapset_ids(&ids)
+        .await?;
+    let extras = beatmapset_extras_repo.list_by_osu_beatmapset_ids(&ids).await?;
+    let items = order_beatmapsets(items, extras, &ids);
 
     Ok(BeatmapsetPage {
         items,
@@ -163,64 +161,28 @@ pub async fn list_mapper_beatmapsets_by_id(
     })
 }
 
-async fn load_mapper_profile(
-    mapper_stats_repo: &MapperStatsCurrentRepo,
-    leaderboard_positions_repo: &LeaderboardPositionCurrentRepo,
-    snapshots_repo: &MapperAggregateSnapshotWeeklyRepo,
-    osu_users_repo: &OsuUserRepo,
-    mapper: Option<crate::entities::ua_mapper::Model>,
-) -> Result<Option<MapperProfile>, DbErr> {
-    let Some(mapper) = mapper else {
-        return Ok(None);
-    };
+fn order_beatmapsets(
+    items: Vec<crate::entities::beatmapset_profile::Model>,
+    extras: Vec<crate::entities::beatmapset_extra::Model>,
+    ids: &[i64],
+) -> Vec<BeatmapsetListItem> {
+    use std::collections::HashMap;
 
-    let mapper_stats = mapper_stats_repo
-        .get_by_osu_user_id(mapper.osu_user_id)
-        .await?;
-    let leaderboard_positions = leaderboard_positions_repo
-        .list_by_osu_user_id(mapper.osu_user_id)
-        .await?;
-    let charts = snapshots_repo
-        .list_by_osu_user_id(mapper.osu_user_id)
-        .await?;
-    let user_row = osu_users_repo
-        .get_by_osu_user_id(mapper.osu_user_id)
-        .await?;
-    let mapper_fingerprint = match user_row {
-        Some(row) => Some(row.raw),
-        None => None,
-    };
+    let mut by_id = items
+        .into_iter()
+        .map(|row| (row.osu_beatmapset_id, row))
+        .collect::<HashMap<_, _>>();
+    let mut extras_by_id = extras
+        .into_iter()
+        .map(|row| (row.osu_beatmapset_id, row))
+        .collect::<HashMap<_, _>>();
 
-    Ok(Some(MapperProfile {
-        mapper,
-        mapper_fingerprint,
-        mapper_stats,
-        leaderboard_positions: order_positions(leaderboard_positions),
-        charts,
-    }))
-}
-
-fn order_positions(
-    mut positions: Vec<crate::entities::leaderboard_position_current::Model>,
-) -> Vec<crate::entities::leaderboard_position_current::Model> {
-    positions.sort_by_key(|row| leaderboard_order(&row.leaderboard_key));
-    positions
-}
-
-fn leaderboard_order(key: &str) -> usize {
-    leaderboard_keys()
-        .iter()
-        .position(|candidate| *candidate == key)
-        .unwrap_or(usize::MAX)
-}
-
-fn leaderboard_keys() -> [&'static str; 6] {
-    [
-        LeaderboardKeyDto::Followers.as_str(),
-        LeaderboardKeyDto::Ranked.as_str(),
-        LeaderboardKeyDto::GuestDiff.as_str(),
-        LeaderboardKeyDto::Plays.as_str(),
-        LeaderboardKeyDto::Kudosu.as_str(),
-        LeaderboardKeyDto::Nominations.as_str(),
-    ]
+    ids.iter()
+        .filter_map(|id| {
+            by_id.remove(id).map(|profile| BeatmapsetListItem {
+                profile,
+                extra: extras_by_id.remove(id),
+            })
+        })
+        .collect()
 }

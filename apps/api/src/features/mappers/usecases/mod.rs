@@ -1,3 +1,6 @@
+mod chart_points;
+mod current_stats;
+mod profile;
 mod queries;
 mod types;
 
@@ -6,4 +9,9 @@ pub use queries::{
     get_mapper_profile_by_username, list_mapper_beatmapsets_by_id,
     list_mapper_beatmapsets_by_username, list_mappers, search_mappers,
 };
-pub use types::{BeatmapsetPage, CursorInput, MapperCharts, MapperPage, MapperProfile, PageInput};
+pub use types::{
+    BeatmapsetListItem, BeatmapsetPage, CursorInput, MapperChartPoint, MapperCharts,
+    MapperCurrentStats, MapperKudosu, MapperLeaderboardPosition, MapperPage, MapperProfile,
+    PageInput,
+};
+pub(crate) use profile::MapperProfileReadRepos;
