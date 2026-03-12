@@ -139,7 +139,7 @@ impl MapperDiscovery {
                 let elapsed = started_at.elapsed();
                 let _ = page_index;
                 tracing::info!(
-                    "discovery page={} ua+{} ua~{} skip{} {}s",
+                    "discovery pages={} added={} refreshed={} skipped={} {}s",
                     pages_scanned,
                     ua_added,
                     ua_refreshed,
@@ -183,7 +183,7 @@ impl MapperDiscovery {
 
         let elapsed = started_at.elapsed();
         tracing::info!(
-            "discovery done page={} ua+{} ua~{} skip{} {}s",
+            "discovery done pages={} added={} refreshed={} skipped={} {}s",
             pages_scanned,
             ua_added,
             ua_refreshed,

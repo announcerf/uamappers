@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use chrono::{DateTime, Utc};
+
 pub fn format_duration(duration: Duration) -> String {
     let total_ms: u64 = duration.as_millis().try_into().unwrap_or(u64::MAX);
 
@@ -15,4 +17,8 @@ pub fn format_duration(duration: Duration) -> String {
         (0, m, s) => format!("{m}m {s}s"),
         (h, m, s) => format!("{h}h {m}m {s}s"),
     }
+}
+
+pub fn format_utc(datetime: DateTime<Utc>) -> String {
+    datetime.format("%Y-%m-%d %H:%M:%S UTC").to_string()
 }
