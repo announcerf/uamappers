@@ -132,7 +132,7 @@ fn fallback_fingerprint(mapper: &crate::entities::ua_mapper::Model) -> MapperFin
 }
 
 fn mapper_stats_to_dto(
-    model: crate::entities::mapper_stats_current::Model,
+    model: crate::features::mappers::usecases::MapperCurrentStats,
 ) -> MapperStatsCurrentDto {
     MapperStatsCurrentDto {
         total_mapsets: model.total_mapsets,
@@ -160,8 +160,8 @@ fn mapper_stats_to_dto(
         main_mode: model.main_mode,
         mapping_followers: model.mapping_followers,
         kudosu: MapperKudosuDto {
-            total: model.kudosu_total,
-            available: model.kudosu_available,
+            total: model.kudosu.total,
+            available: model.kudosu.available,
         },
         has_ranked: model.has_ranked,
         has_loved: model.has_loved,
@@ -172,7 +172,7 @@ fn mapper_stats_to_dto(
 }
 
 fn mapper_leaderboard_position_to_dto(
-    model: crate::entities::leaderboard_position_current::Model,
+    model: crate::features::mappers::usecases::MapperLeaderboardPosition,
 ) -> MapperLeaderboardPositionDto {
     MapperLeaderboardPositionDto {
         leaderboard_key: model.leaderboard_key,

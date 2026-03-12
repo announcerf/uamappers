@@ -3,9 +3,13 @@
 use chrono::{TimeZone, Utc};
 use rosu_v2::model::beatmap::BeatmapsetExtended;
 use serde_json::json;
-use uamappers_api::features::mappers::storage::mapper_stats_current_repo::NewMapperStatsCurrentRow;
+use uamappers_api::entities::{beatmap_profile, beatmapset_profile};
+use uamappers_api::features::mappers::storage::{
+    codes::{mode_code, status_code},
+    mapper_stats_current_repo::NewMapperStatsCurrentRow,
+};
 use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::snapshot::{
-    mapper_stats_row_to_snapshot_row, mapset_to_snapshot_row, snapshot_week,
+    build_mapper_snapshot_row, mapset_to_snapshot_row, snapshot_week,
 };
 
 #[test]
@@ -95,8 +99,9 @@ fn beatmapset_snapshot_uses_current_mapset_counters() {
     assert_eq!(row.osu_beatmapset_id, 1000);
     assert_eq!(row.playcount, 5000);
     assert_eq!(row.favourite_count, 300);
-    assert_eq!(row.status, "ranked");
-    assert!(row.avg_pass_rate > 0.0);
+    assert_eq!(row.status, status_code("ranked"));
+    assert_eq!(row.beatmap_count, 1);
+    assert!(row.pass_rate_sum > 0.0);
 }
 
 #[test]
@@ -111,37 +116,98 @@ fn mapper_stats_snapshot_keeps_weekly_rollup_values() {
         graveyard_mapsets: 1,
         pending_mapsets: 0,
         total_playcount: 10000,
-        avg_rating: 8.5,
-        weighted_rating: 8.6,
-        avg_stars: 5.0,
-        min_stars: 2.0,
-        max_stars: 7.0,
-        avg_bpm: 180.0,
-        avg_length_seconds: 120.0,
-        avg_ar: 9.0,
-        avg_cs: 4.0,
-        avg_od: 8.0,
-        avg_hp: 6.0,
         first_submitted_date: None,
         first_ranked_date: None,
         last_mapset_updated_at: None,
-        main_mode: "osu".to_string(),
+        main_mode: mode_code("osu"),
         mapping_followers: 10,
         kudosu_available: 12,
         kudosu_total: 20,
-        has_ranked: true,
-        has_loved: true,
-        has_guest: true,
-        has_nominated: true,
     };
 
-    let row = mapper_stats_row_to_snapshot_row(
+    let row = build_mapper_snapshot_row(
         &stats,
+        &[mapset_model()],
+        &[beatmap_model()],
         Utc.with_ymd_and_hms(2026, 3, 9, 0, 0, 0).unwrap(),
     );
 
     assert_eq!(row.osu_user_id, 42);
     assert_eq!(row.total_mapsets, 10);
     assert_eq!(row.ranked_mapsets, 4);
-    assert_eq!(row.main_mode, "osu");
+    assert_eq!(row.rating_sum, 8.5);
+    assert_eq!(row.beatmap_count, 1);
+    assert_eq!(row.main_mode, mode_code("osu"));
+}
+
+fn mapset_model() -> beatmapset_profile::Model {
+    let now = Utc::now();
+
+    beatmapset_profile::Model {
+        osu_beatmapset_id: 1000,
+        artist: "Artist".to_string(),
+        artist_unicode: None,
+        title: "Title".to_string(),
+        title_unicode: None,
+        source: String::new(),
+        tags: String::new(),
+        genre: None,
+        language: None,
+        status: status_code("ranked"),
+        submitted_date: None,
+        ranked_date: None,
+        last_updated: now,
+        discussion_enabled: true,
+        discussion_locked: false,
+        can_be_hyped: false,
+        is_scoreable: true,
+        download_disabled: false,
+        nsfw: false,
+        video: false,
+        storyboard: false,
+        spotlight: false,
+        playcount: 100,
+        favourite_count: 10,
+        rating: 8.5,
+        hype_current: 0,
+        hype_required: 0,
+        nominations_current: 0,
+        cover_url: String::new(),
+        card_url: String::new(),
+        preview_url: String::new(),
+        bpm: 180.0,
+        cached_at: now,
+        updated_at: now,
+    }
+}
+
+fn beatmap_model() -> beatmap_profile::Model {
+    let now = Utc::now();
+
+    beatmap_profile::Model {
+        osu_beatmap_id: 2000,
+        osu_beatmapset_id: 1000,
+        version: "Insane".to_string(),
+        mode: mode_code("osu"),
+        stars: 5.0,
+        ar: 9.0,
+        cs: 4.0,
+        od: 8.0,
+        hp: 6.0,
+        bpm: 180.0,
+        seconds_total: 120,
+        seconds_drain: 100,
+        max_combo: Some(1234),
+        playcount: 100,
+        passcount: 50,
+        count_circles: 100,
+        count_sliders: 50,
+        count_spinners: 1,
+        owners_json: json!([]),
+        status: status_code("ranked"),
+        is_scoreable: true,
+        last_updated: now,
+        cached_at: now,
+        updated_at: now,
+    }
 }

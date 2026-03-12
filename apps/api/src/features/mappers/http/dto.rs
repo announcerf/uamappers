@@ -185,10 +185,31 @@ impl UserBeatmapsetsKindDto {
 #[serde(rename_all = "camelCase")]
 pub struct BeatmapsetDto {
     pub osu_beatmapset_id: i64,
+    pub creator_name: String,
+    pub artist: String,
+    pub artist_unicode: Option<String>,
+    pub title: String,
+    pub title_unicode: Option<String>,
+    pub status: String,
+    pub genre: Option<String>,
+    pub language: Option<String>,
+    pub source: String,
+    pub tags: String,
+    pub cover_url: String,
+    pub card_url: String,
+    pub preview_url: String,
+    pub submitted_date: Option<chrono::DateTime<chrono::Utc>>,
+    pub ranked_date: Option<chrono::DateTime<chrono::Utc>>,
     pub osu_last_updated: chrono::DateTime<chrono::Utc>,
+    pub playcount: i64,
+    pub favourite_count: i64,
+    pub rating: f32,
+    pub video: bool,
+    pub storyboard: bool,
+    pub nsfw: bool,
+    pub spotlight: bool,
+    pub bpm: f32,
     pub cached_at: chrono::DateTime<chrono::Utc>,
-    #[schema(value_type = Object)]
-    pub raw: serde_json::Value,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

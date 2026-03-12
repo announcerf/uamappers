@@ -1,6 +1,9 @@
 use chrono::Utc;
 use serde_json::json;
 use uamappers_api::features::mappers::http::presenters::mapper_profile_to_dto;
+use uamappers_api::features::mappers::usecases::{
+    MapperChartPoint, MapperCurrentStats, MapperKudosu, MapperLeaderboardPosition,
+};
 
 #[test]
 fn mapper_profile_to_dto_includes_stats_positions_and_charts() {
@@ -33,8 +36,7 @@ fn mapper_profile_to_dto_includes_stats_positions_and_charts() {
             "isFullBn": true,
             "cachedAt": now
         })),
-        mapper_stats: Some(uamappers_api::entities::mapper_stats_current::Model {
-            osu_user_id: 42,
+        mapper_stats: Some(MapperCurrentStats {
             total_mapsets: 5,
             ranked_mapsets: 3,
             loved_mapsets: 1,
@@ -59,40 +61,36 @@ fn mapper_profile_to_dto_includes_stats_positions_and_charts() {
             last_mapset_updated_at: Some(now),
             main_mode: "osu".to_string(),
             mapping_followers: 10,
-            kudosu_available: 2,
-            kudosu_total: 50,
+            kudosu: MapperKudosu {
+                total: 50,
+                available: 2,
+            },
             has_ranked: true,
             has_loved: true,
             has_guest: true,
             has_nominated: true,
             updated_at: now,
         }),
-        leaderboard_positions: vec![uamappers_api::entities::leaderboard_position_current::Model {
+        leaderboard_positions: vec![MapperLeaderboardPosition {
             leaderboard_key: "ranked".to_string(),
-            osu_user_id: 42,
             current_rank: 1,
             previous_rank: Some(3),
             rank_delta: 2,
             measured_at: now,
-            updated_at: now,
         }],
-        charts: vec![uamappers_api::entities::mapper_aggregate_snapshot_weekly::Model {
-            osu_user_id: 42,
+        charts: vec![MapperChartPoint {
             snapshot_week: now,
             total_mapsets: 5,
             ranked_mapsets: 3,
             loved_mapsets: 1,
             guest_mapsets: 2,
             nominated_mapsets: 1,
-            graveyard_mapsets: 1,
-            pending_mapsets: 0,
             total_playcount: 1000,
             avg_rating: 8.2,
             avg_stars: 5.1,
             avg_bpm: 180.0,
             avg_length_seconds: 120.0,
             main_mode: "osu".to_string(),
-            updated_at: now,
         }],
     });
 

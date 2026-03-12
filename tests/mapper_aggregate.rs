@@ -1,7 +1,10 @@
 use chrono::{TimeZone, Utc};
 use serde_json::json;
 use uamappers_api::entities::{beatmap_profile, beatmapset_profile, osu_user_beatmapset};
-use uamappers_api::features::mappers::storage::osu_user_fingerprint::{MapperFingerprint, MapperKudosu};
+use uamappers_api::features::mappers::storage::{
+    codes::{kind_code, mode_code, status_code},
+    osu_user_fingerprint::{MapperFingerprint, MapperKudosu},
+};
 use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::aggregate::build_mapper_stats_row;
 
 #[test]
@@ -55,18 +58,14 @@ fn aggregate_computes_primary_metrics() {
     assert_eq!(row.mapping_followers, 15);
     assert_eq!(row.kudosu_available, 2);
     assert_eq!(row.kudosu_total, 7);
-    assert_eq!(row.main_mode, "osu");
-    assert!(row.has_ranked);
-    assert!(row.has_guest);
-    assert!(row.has_nominated);
+    assert_eq!(row.main_mode, mode_code("osu"));
 }
 
 fn relation(osu_user_id: i64, kind: &str, osu_beatmapset_id: i64) -> osu_user_beatmapset::Model {
     osu_user_beatmapset::Model {
         osu_user_id,
-        kind: kind.to_string(),
+        kind: kind_code(kind),
         osu_beatmapset_id,
-        created_at: Utc::now(),
         updated_at: Utc::now(),
     }
 }
@@ -80,8 +79,6 @@ fn mapset(
 ) -> beatmapset_profile::Model {
     beatmapset_profile::Model {
         osu_beatmapset_id,
-        creator_id: 42,
-        creator_name: "Mapper".to_string(),
         artist: "Artist".to_string(),
         artist_unicode: None,
         title: "Title".to_string(),
@@ -90,7 +87,7 @@ fn mapset(
         tags: String::new(),
         genre: None,
         language: None,
-        status: status.to_string(),
+        status: status_code(status),
         submitted_date: Some(Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap()),
         ranked_date: Some(Utc.with_ymd_and_hms(2024, 2, 1, 0, 0, 0).unwrap()),
         last_updated: Utc.with_ymd_and_hms(2025, 1, 1, 0, 0, 0).unwrap(),
@@ -113,9 +110,7 @@ fn mapset(
         card_url: String::new(),
         preview_url: String::new(),
         bpm: 180.0,
-        difficulty_count: 1,
         cached_at: Utc::now(),
-        created_at: Utc::now(),
         updated_at: Utc::now(),
     }
 }
@@ -130,9 +125,8 @@ fn beatmap(
     beatmap_profile::Model {
         osu_beatmap_id: osu_beatmapset_id * 10,
         osu_beatmapset_id,
-        creator_id: 42,
         version: "Insane".to_string(),
-        mode: mode.to_string(),
+        mode: mode_code(mode),
         stars,
         ar: 9.0,
         cs: 4.0,
@@ -148,11 +142,10 @@ fn beatmap(
         count_sliders: 50,
         count_spinners: 1,
         owners_json: json!([]),
-        status: "ranked".to_string(),
+        status: status_code("ranked"),
         is_scoreable: true,
         last_updated: Utc::now(),
         cached_at: Utc::now(),
-        created_at: Utc::now(),
         updated_at: Utc::now(),
     }
 }

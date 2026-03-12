@@ -14,10 +14,15 @@ pub async fn get_mapper(
 ) -> Result<Json<UaMapperProfileDto>, ApiError> {
     let profile = usecases::get_mapper_profile_by_username(
         &state.ua_mappers_repo,
-        &state.mapper_stats_repo,
-        &state.leaderboard_positions_repo,
-        &state.mapper_aggregate_snapshots_repo,
-        &state.osu_users_repo,
+        usecases::MapperProfileReadRepos {
+            beatmapset_profiles_repo: &state.beatmapset_profiles_repo,
+            beatmap_profiles_repo: &state.beatmap_profiles_repo,
+            mapper_stats_repo: &state.mapper_stats_repo,
+            leaderboard_positions_repo: &state.leaderboard_positions_repo,
+            snapshots_repo: &state.mapper_aggregate_snapshots_repo,
+            osu_user_beatmapsets_repo: &state.osu_user_beatmapsets_repo,
+            osu_users_repo: &state.osu_users_repo,
+        },
         &user,
     )
     .await
@@ -39,10 +44,15 @@ pub async fn get_mapper_by_id(
 ) -> Result<Json<UaMapperProfileDto>, ApiError> {
     let profile = usecases::get_mapper_profile_by_id(
         &state.ua_mappers_repo,
-        &state.mapper_stats_repo,
-        &state.leaderboard_positions_repo,
-        &state.mapper_aggregate_snapshots_repo,
-        &state.osu_users_repo,
+        usecases::MapperProfileReadRepos {
+            beatmapset_profiles_repo: &state.beatmapset_profiles_repo,
+            beatmap_profiles_repo: &state.beatmap_profiles_repo,
+            mapper_stats_repo: &state.mapper_stats_repo,
+            leaderboard_positions_repo: &state.leaderboard_positions_repo,
+            snapshots_repo: &state.mapper_aggregate_snapshots_repo,
+            osu_user_beatmapsets_repo: &state.osu_user_beatmapsets_repo,
+            osu_users_repo: &state.osu_users_repo,
+        },
         osu_user_id,
     )
     .await
