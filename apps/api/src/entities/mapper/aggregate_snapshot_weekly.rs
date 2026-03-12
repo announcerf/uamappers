@@ -15,11 +15,12 @@ pub struct Model {
     pub graveyard_mapsets: i32,
     pub pending_mapsets: i32,
     pub total_playcount: i64,
-    pub avg_rating: f32,
-    pub avg_stars: f32,
-    pub avg_bpm: f32,
-    pub avg_length_seconds: f32,
-    pub main_mode: String,
+    pub rating_sum: f32,
+    pub beatmap_count: i32,
+    pub stars_sum: f32,
+    pub bpm_sum: f32,
+    pub length_seconds_sum: f32,
+    pub main_mode: i16,
     pub updated_at: DateTimeUtc,
 }
 

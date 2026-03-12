@@ -1,4 +1,5 @@
 use chrono::{Datelike, Duration, TimeZone, Utc, Weekday};
+use uamappers_api::entities::{beatmap_profile, beatmapset_profile};
 use uamappers_api::features::mappers::storage::{
     mapper_aggregate_snapshot_weekly_repo::NewMapperAggregateSnapshotWeeklyRow,
     mapper_stats_current_repo::NewMapperStatsCurrentRow,
@@ -23,8 +24,10 @@ pub fn snapshot_week(now: chrono::DateTime<Utc>) -> chrono::DateTime<Utc> {
     )
 }
 
-pub fn mapper_stats_row_to_snapshot_row(
+pub fn build_mapper_snapshot_row(
     stats: &NewMapperStatsCurrentRow,
+    beatmapsets: &[beatmapset_profile::Model],
+    beatmaps: &[beatmap_profile::Model],
     snapshot_week: chrono::DateTime<Utc>,
 ) -> NewMapperAggregateSnapshotWeeklyRow {
     NewMapperAggregateSnapshotWeeklyRow {
@@ -38,10 +41,11 @@ pub fn mapper_stats_row_to_snapshot_row(
         graveyard_mapsets: stats.graveyard_mapsets,
         pending_mapsets: stats.pending_mapsets,
         total_playcount: stats.total_playcount,
-        avg_rating: stats.avg_rating,
-        avg_stars: stats.avg_stars,
-        avg_bpm: stats.avg_bpm,
-        avg_length_seconds: stats.avg_length_seconds,
-        main_mode: stats.main_mode.clone(),
+        rating_sum: beatmapsets.iter().map(|row| row.rating).sum(),
+        beatmap_count: beatmaps.len() as i32,
+        stars_sum: beatmaps.iter().map(|row| row.stars).sum(),
+        bpm_sum: beatmaps.iter().map(|row| row.bpm).sum(),
+        length_seconds_sum: beatmaps.iter().map(|row| row.seconds_total as f32).sum(),
+        main_mode: stats.main_mode,
     }
 }
