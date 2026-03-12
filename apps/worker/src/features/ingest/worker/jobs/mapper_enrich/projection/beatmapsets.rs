@@ -9,7 +9,7 @@ use uamappers_api::features::mappers::storage::{
 use super::shared::{
     genre_to_str, language_to_str, mode_to_str, offset_to_utc, rank_status_to_str, to_json_array,
 };
-use crate::features::ingest::worker::jobs::mapper_enrich::raw::strip_top_level_id;
+use crate::features::ingest::worker::jobs::mapper_enrich::raw::strip_mapset_raw;
 use crate::features::ingest::worker::jobs::mapper_enrich::snapshot::mapset_to_snapshot_row;
 
 pub struct BeatmapsetsPersistPage {
@@ -74,7 +74,7 @@ pub fn mapset_to_row(
     mapset: &BeatmapsetExtended,
 ) -> uamappers_api::features::mappers::storage::beatmapset_repo::NewBeatmapsetRow {
     let raw = serde_json::to_value(mapset)
-        .map(strip_top_level_id)
+        .map(strip_mapset_raw)
         .unwrap_or(serde_json::Value::Null);
 
     uamappers_api::features::mappers::storage::beatmapset_repo::NewBeatmapsetRow {

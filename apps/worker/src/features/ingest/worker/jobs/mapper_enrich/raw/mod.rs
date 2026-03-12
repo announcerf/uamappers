@@ -1,3 +1,3 @@
 mod json;
 
-pub use json::strip_top_level_id;
+pub use json::strip_mapset_raw;

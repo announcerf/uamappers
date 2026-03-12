@@ -4,9 +4,8 @@ use uamappers_api::features::mappers::storage::{
     beatmapset_repo::BeatmapsetRepo, beatmapset_snapshot_weekly_repo::BeatmapsetSnapshotWeeklyRepo,
     leaderboard_position_current_repo::LeaderboardPositionCurrentRepo,
     mapper_aggregate_snapshot_weekly_repo::MapperAggregateSnapshotWeeklyRepo,
-    mapper_profile_repo::MapperProfileRepo, mapper_stats_current_repo::MapperStatsCurrentRepo,
-    osu_user_beatmapset_repo::OsuUserBeatmapsetRepo, osu_user_repo::OsuUserRepo,
-    ua_mapper_repo::UaMapperRepo,
+    mapper_stats_current_repo::MapperStatsCurrentRepo, osu_user_beatmapset_repo::OsuUserBeatmapsetRepo,
+    osu_user_repo::OsuUserRepo, ua_mapper_repo::UaMapperRepo,
 };
 
 use crate::features::ingest::osu_client::OsuClient;
@@ -22,7 +21,6 @@ pub struct MapperEnrichRepos {
     pub beatmapsets_repo: BeatmapsetRepo,
     pub leaderboard_positions_repo: LeaderboardPositionCurrentRepo,
     pub mapper_aggregate_snapshots_repo: MapperAggregateSnapshotWeeklyRepo,
-    pub mapper_profiles_repo: MapperProfileRepo,
     pub mapper_stats_repo: MapperStatsCurrentRepo,
     pub osu_user_beatmapsets_repo: OsuUserBeatmapsetRepo,
     pub osu_users_repo: OsuUserRepo,
@@ -38,7 +36,6 @@ pub struct MapperEnrich {
     pub(crate) config: WorkerConfig,
     pub(crate) leaderboard_positions_repo: LeaderboardPositionCurrentRepo,
     pub(crate) mapper_aggregate_snapshots_repo: MapperAggregateSnapshotWeeklyRepo,
-    pub(crate) mapper_profiles_repo: MapperProfileRepo,
     pub(crate) mapper_stats_repo: MapperStatsCurrentRepo,
     pub(crate) osu_client: OsuClient,
     pub(crate) osu_user_beatmapsets_repo: OsuUserBeatmapsetRepo,
@@ -57,7 +54,6 @@ impl MapperEnrich {
             config,
             leaderboard_positions_repo: repos.leaderboard_positions_repo,
             mapper_aggregate_snapshots_repo: repos.mapper_aggregate_snapshots_repo,
-            mapper_profiles_repo: repos.mapper_profiles_repo,
             mapper_stats_repo: repos.mapper_stats_repo,
             osu_client,
             osu_user_beatmapsets_repo: repos.osu_user_beatmapsets_repo,

@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-pub fn strip_top_level_id(mut value: Value) -> Value {
+pub fn strip_mapset_raw(mut value: Value) -> Value {
     let Value::Object(obj) = &mut value else {
         return value;
     };

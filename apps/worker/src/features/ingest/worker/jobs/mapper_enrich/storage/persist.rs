@@ -9,7 +9,6 @@ pub async fn persist_user_profile(
     job: &MapperEnrich,
     osu_user_id: i64,
     raw: sea_orm::JsonValue,
-    profile: uamappers_api::features::mappers::storage::mapper_profile_repo::NewMapperProfileRow,
     fetched_at: chrono::DateTime<chrono::Utc>,
 ) -> Result<(), WorkerError> {
     let txn = job.osu_users_repo.db().begin().await?;
@@ -17,7 +16,6 @@ pub async fn persist_user_profile(
     job.osu_users_repo
         .upsert_with(&txn, osu_user_id, raw, fetched_at)
         .await?;
-    job.mapper_profiles_repo.upsert_with(&txn, profile).await?;
 
     txn.commit().await?;
     Ok(())
