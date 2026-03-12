@@ -5,7 +5,8 @@ use sea_orm::{
     QueryFilter, QueryOrder, QuerySelect, Set,
 };
 
-use crate::entities::{beatmapset, osu_user_beatmapset};
+use crate::entities::osu_user_beatmapset;
+use crate::features::mappers::storage::codes::kind_code;
 
 #[derive(Clone, Debug)]
 pub struct OsuUserBeatmapsetRepo {
@@ -33,12 +34,13 @@ impl OsuUserBeatmapsetRepo {
         }
 
         let now = Utc::now();
+        let kind = kind_code(kind);
+
         for osu_beatmapset_id in beatmapset_ids {
             let active = osu_user_beatmapset::ActiveModel {
                 osu_user_id: Set(osu_user_id),
-                kind: Set(kind.to_string()),
+                kind: Set(kind),
                 osu_beatmapset_id: Set(*osu_beatmapset_id),
-                created_at: Set(now),
                 updated_at: Set(now),
             };
 
@@ -59,36 +61,36 @@ impl OsuUserBeatmapsetRepo {
         Ok(())
     }
 
-    pub async fn list_beatmapsets(
+    pub async fn list_beatmapset_ids(
         &self,
         osu_user_id: i64,
         kind: &str,
         limit: u64,
         offset: u64,
-    ) -> Result<(Vec<beatmapset::Model>, u64), DbErr> {
+    ) -> Result<(Vec<i64>, u64), DbErr> {
+        let kind = kind_code(kind);
         let total = osu_user_beatmapset::Entity::find()
             .filter(osu_user_beatmapset::Column::OsuUserId.eq(osu_user_id))
             .filter(osu_user_beatmapset::Column::Kind.eq(kind))
             .count(&self.db)
             .await?;
 
-        let rows = osu_user_beatmapset::Entity::find()
+        let ids = osu_user_beatmapset::Entity::find()
             .filter(osu_user_beatmapset::Column::OsuUserId.eq(osu_user_id))
             .filter(osu_user_beatmapset::Column::Kind.eq(kind))
-            .find_also_related(beatmapset::Entity)
-            .order_by_desc(beatmapset::Column::LastUpdated)
-            .order_by_desc(beatmapset::Column::OsuBeatmapsetId)
+            .order_by_desc(osu_user_beatmapset::Column::UpdatedAt)
+            .order_by_desc(osu_user_beatmapset::Column::OsuBeatmapsetId)
             .limit(limit)
             .offset(offset)
             .all(&self.db)
             .await?;
 
-        let beatmapsets = rows
+        let ids = ids
             .into_iter()
-            .filter_map(|(_, maybe)| maybe)
+            .map(|row| row.osu_beatmapset_id)
             .collect::<Vec<_>>();
 
-        Ok((beatmapsets, total))
+        Ok((ids, total))
     }
 
     pub async fn list_by_osu_user_id(
