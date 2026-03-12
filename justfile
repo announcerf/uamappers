@@ -76,7 +76,7 @@ down:
 [doc("Rebuild local dev stack without cache")]
 rebuild:
 	docker compose -f {{dev_compose}} -p {{project}} down
-	docker compose -f {{dev_compose}} -p {{project}} --profile worker build --no-cache
+	docker compose -f {{dev_compose}} -p {{project}} --profile worker --profile migrator build --no-cache
 	docker compose -f {{dev_compose}} -p {{project}} up -d
 
 [doc("Delete all local docker resources for this project (DB data included)")]
@@ -95,8 +95,9 @@ migrate:
 		fi; \
 		sleep 1; \
 	done
+	docker compose -f {{dev_compose}} -p {{project}} --profile migrator build migrator
 	DATABASE_URL="postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB" \
-	docker compose -f {{dev_compose}} -p {{project}} run --rm -e DATABASE_URL migrator up
+	docker compose -f {{dev_compose}} -p {{project}} --profile migrator run --rm -e DATABASE_URL migrator up
 
 [doc("Open a psql shell inside the postgres container")]
 psql:
