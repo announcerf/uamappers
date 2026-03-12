@@ -15,30 +15,24 @@ fn mapper_profile_to_dto_includes_stats_positions_and_charts() {
             created_at: now,
             updated_at: now,
         },
-        mapper_profile: Some(uamappers_api::entities::mapper_profile::Model {
-            osu_user_id: 42,
-            username: "mapper".to_string(),
-            avatar_url: "https://avatar".to_string(),
-            country: "Ukraine".to_string(),
-            country_code: "UA".to_string(),
-            cover_url: "https://cover".to_string(),
-            primary_mode: "osu".to_string(),
-            join_date: now,
-            last_visit: Some(now),
-            mapping_followers: 10,
-            kudosu_available: 2,
-            kudosu_total: 50,
-            badges_json: json!([]),
-            groups_json: json!([]),
-            is_bng: true,
-            is_nat: false,
-            is_gmt: false,
-            is_limited_bn: false,
-            is_full_bn: true,
-            cached_at: now,
-            created_at: now,
-            updated_at: now,
-        }),
+        mapper_fingerprint: Some(json!({
+            "username": "mapper",
+            "country": "Ukraine",
+            "countryCode": "UA",
+            "avatarUrl": "https://avatar",
+            "cover": { "url": "https://cover", "customUrl": null },
+            "primaryMode": "osu",
+            "mappingFollowers": 10,
+            "kudosu": { "available": 2, "total": 50 },
+            "badges": [],
+            "groups": [],
+            "isBng": true,
+            "isNat": false,
+            "isGmt": false,
+            "isProbationaryBn": false,
+            "isFullBn": true,
+            "cachedAt": now
+        })),
         mapper_stats: Some(uamappers_api::entities::mapper_stats_current::Model {
             osu_user_id: 42,
             total_mapsets: 5,
@@ -65,6 +59,7 @@ fn mapper_profile_to_dto_includes_stats_positions_and_charts() {
             last_mapset_updated_at: Some(now),
             main_mode: "osu".to_string(),
             mapping_followers: 10,
+            kudosu_available: 2,
             kudosu_total: 50,
             has_ranked: true,
             has_loved: true,
@@ -99,13 +94,13 @@ fn mapper_profile_to_dto_includes_stats_positions_and_charts() {
             main_mode: "osu".to_string(),
             updated_at: now,
         }],
-        user_fetched_at: Some(now),
-        user_raw: Some(json!({"username": "mapper"})),
     });
 
     assert!(dto.stats.is_some());
     assert_eq!(dto.leaderboard_positions.len(), 1);
     assert_eq!(dto.charts.osu_user_id, 42);
     assert_eq!(dto.charts.points.len(), 1);
-    assert_eq!(dto.user_fetched_at, Some(now));
+    assert_eq!(dto.mapper.username, "mapper");
+    assert_eq!(dto.mapper.country_code, "UA");
+    assert_eq!(dto.stats.expect("stats").kudosu.available, 2);
 }
