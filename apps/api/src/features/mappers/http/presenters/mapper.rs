@@ -163,10 +163,6 @@ fn mapper_stats_to_dto(
             total: model.kudosu.total,
             available: model.kudosu.available,
         },
-        has_ranked: model.has_ranked,
-        has_loved: model.has_loved,
-        has_guest: model.has_guest,
-        has_nominated: model.has_nominated,
         updated_at: model.updated_at,
     }
 }

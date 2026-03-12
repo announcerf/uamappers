@@ -77,10 +77,6 @@ pub struct MapperCurrentStats {
     pub main_mode: String,
     pub mapping_followers: i32,
     pub kudosu: MapperKudosu,
-    pub has_ranked: bool,
-    pub has_loved: bool,
-    pub has_guest: bool,
-    pub has_nominated: bool,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 

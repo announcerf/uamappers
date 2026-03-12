@@ -1,3 +1,5 @@
+use crate::shared::ranking::rank_delta;
+
 use sea_orm::DbErr;
 
 use crate::features::leaderboards::http::dto::LeaderboardKeyDto;
@@ -10,7 +12,7 @@ use crate::features::mappers::storage::{
 };
 
 use super::chart_points::build_mapper_chart_points;
-use super::current_stats::{build_mapper_current_stats, rank_delta};
+use super::current_stats::build_mapper_current_stats;
 use super::types::{MapperLeaderboardPosition, MapperProfile};
 
 pub struct MapperProfileReadRepos<'a> {

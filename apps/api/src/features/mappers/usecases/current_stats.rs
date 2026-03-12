@@ -37,16 +37,8 @@ pub fn build_mapper_current_stats(
             total: model.kudosu_total,
             available: model.kudosu_available,
         },
-        has_ranked: model.ranked_mapsets > 0,
-        has_loved: model.loved_mapsets > 0,
-        has_guest: model.guest_mapsets > 0,
-        has_nominated: model.nominated_mapsets > 0,
         updated_at: model.updated_at,
     }
-}
-
-pub fn rank_delta(current_rank: i32, previous_rank: Option<i32>) -> i32 {
-    previous_rank.map(|prev| prev - current_rank).unwrap_or(0)
 }
 
 fn average_f32(values: impl Iterator<Item = f32>) -> f32 {

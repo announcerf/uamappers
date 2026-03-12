@@ -69,10 +69,6 @@ fn mapper_profile_serializes_in_camel_case() {
                 total: 3,
                 available: 2,
             },
-            has_ranked: true,
-            has_loved: false,
-            has_guest: false,
-            has_nominated: false,
             updated_at: now,
         }),
         leaderboard_positions: vec![MapperLeaderboardPositionDto {

@@ -65,10 +65,6 @@ fn mapper_profile_to_dto_includes_stats_positions_and_charts() {
                 total: 50,
                 available: 2,
             },
-            has_ranked: true,
-            has_loved: true,
-            has_guest: true,
-            has_nominated: true,
             updated_at: now,
         }),
         leaderboard_positions: vec![MapperLeaderboardPosition {

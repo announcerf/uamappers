@@ -9,6 +9,7 @@ use crate::features::mappers::storage::{
     mapper_stats_current_repo::MapperStatsCurrentRepo, osu_user_fingerprint::MapperFingerprint,
     osu_user_repo::OsuUserRepo, ua_mapper_repo::UaMapperRepo,
 };
+use crate::shared::ranking::rank_delta;
 
 use super::types::{LeaderboardPage, LeaderboardRow};
 
@@ -89,11 +90,6 @@ pub async fn get_leaderboard(
         items,
     })
 }
-
-fn rank_delta(current_rank: i32, previous_rank: Option<i32>) -> i32 {
-    previous_rank.map(|prev| prev - current_rank).unwrap_or(0)
-}
-
 fn leaderboard_metric_key(leaderboard: LeaderboardKeyDto) -> &'static str {
     match leaderboard {
         LeaderboardKeyDto::Followers => "mapping_followers",
