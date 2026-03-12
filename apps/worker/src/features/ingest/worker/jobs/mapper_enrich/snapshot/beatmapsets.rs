@@ -1,5 +1,6 @@
 use chrono::{TimeZone, Utc};
 use rosu_v2::model::beatmap::BeatmapsetExtended;
+use uamappers_api::features::mappers::storage::codes::status_code;
 use uamappers_api::features::mappers::storage::beatmapset_snapshot_weekly_repo::NewBeatmapsetSnapshotWeeklyRow;
 
 pub fn mapset_to_snapshot_row(
@@ -21,40 +22,30 @@ pub fn mapset_to_snapshot_row(
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
-    let avg_passcount = mapset
+    let beatmap_count = mapset
         .maps
         .as_ref()
-        .map(|maps| maps.iter().map(|map| map.passcount as f32).sum::<f32>() / maps.len() as f32)
-        .unwrap_or(0.0);
+        .map(|maps| maps.len() as i32)
+        .unwrap_or(0);
+    let passcount_sum = mapset
+        .maps
+        .as_ref()
+        .map(|maps| maps.iter().map(|map| map.passcount as i64).sum())
+        .unwrap_or(0);
 
     NewBeatmapsetSnapshotWeeklyRow {
         osu_beatmapset_id: mapset.mapset_id as i64,
         snapshot_week,
-        status: rank_status_to_str(mapset.status).to_string(),
+        status: status_code(rank_status_to_str(mapset.status)),
         playcount: mapset.playcount as i64,
         favourite_count: mapset.favourite_count as i64,
         rating: mapset.rating,
-        avg_passcount,
-        avg_pass_rate: average(pass_rates.iter().copied()),
+        beatmap_count,
+        passcount_sum,
+        pass_rate_sum: pass_rates.iter().copied().sum(),
         min_pass_rate: pass_rates.iter().copied().reduce(f32::min).unwrap_or(0.0),
         max_pass_rate: pass_rates.iter().copied().reduce(f32::max).unwrap_or(0.0),
         last_updated: offset_to_utc(mapset.last_updated),
-    }
-}
-
-fn average(values: impl Iterator<Item = f32>) -> f32 {
-    let mut total = 0.0f32;
-    let mut count = 0u32;
-
-    for value in values {
-        total += value;
-        count += 1;
-    }
-
-    if count == 0 {
-        0.0
-    } else {
-        total / count as f32
     }
 }
 

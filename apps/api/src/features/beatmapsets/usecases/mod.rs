@@ -1,3 +1,4 @@
+mod chart_points;
 mod queries;
 mod types;
 
