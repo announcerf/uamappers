@@ -4,8 +4,8 @@ use chrono::Utc;
 use sea_orm::sea_query::extension::postgres::PgExpr;
 use sea_orm::sea_query::{Expr, Func, OnConflict};
 use sea_orm::{
-    ColumnTrait, ConnectionTrait, DatabaseConnection, DbErr, EntityTrait, PaginatorTrait,
-    QueryFilter, QueryOrder, QuerySelect, Set,
+    ColumnTrait, Condition, ConnectionTrait, DatabaseConnection, DbErr, EntityTrait,
+    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set,
 };
 
 use crate::entities::ua_mapper;
@@ -53,6 +53,34 @@ impl UaMapperRepo {
         ua_mapper::Entity::find()
             .filter(ua_mapper::Column::OsuUserId.gt(after_id))
             .order_by_asc(ua_mapper::Column::OsuUserId)
+            .limit(limit)
+            .all(&self.db)
+            .await
+    }
+
+    pub async fn list_for_enrich_batch(
+        &self,
+        cursor: Option<(chrono::DateTime<Utc>, i64)>,
+        limit: u64,
+    ) -> Result<Vec<ua_mapper::Model>, DbErr> {
+        let query = ua_mapper::Entity::find();
+
+        let query = match cursor {
+            Some((last_seen_at, osu_user_id)) => query.filter(
+                Condition::any()
+                    .add(ua_mapper::Column::LastSeenAt.lt(last_seen_at))
+                    .add(
+                        Condition::all()
+                            .add(ua_mapper::Column::LastSeenAt.eq(last_seen_at))
+                            .add(ua_mapper::Column::OsuUserId.lt(osu_user_id)),
+                    ),
+            ),
+            None => query,
+        };
+
+        query
+            .order_by_desc(ua_mapper::Column::LastSeenAt)
+            .order_by_desc(ua_mapper::Column::OsuUserId)
             .limit(limit)
             .all(&self.db)
             .await
