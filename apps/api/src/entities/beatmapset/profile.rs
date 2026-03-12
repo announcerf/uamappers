@@ -5,17 +5,15 @@ use sea_orm::entity::prelude::*;
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub osu_beatmapset_id: i64,
-    pub creator_id: i64,
-    pub creator_name: String,
     pub artist: String,
     pub artist_unicode: Option<String>,
     pub title: String,
     pub title_unicode: Option<String>,
     pub source: String,
     pub tags: String,
-    pub genre: Option<String>,
-    pub language: Option<String>,
-    pub status: String,
+    pub genre: Option<i16>,
+    pub language: Option<i16>,
+    pub status: i16,
     pub submitted_date: Option<DateTimeUtc>,
     pub ranked_date: Option<DateTimeUtc>,
     pub last_updated: DateTimeUtc,
@@ -38,9 +36,7 @@ pub struct Model {
     pub card_url: String,
     pub preview_url: String,
     pub bpm: f32,
-    pub difficulty_count: i32,
     pub cached_at: DateTimeUtc,
-    pub created_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }
 

@@ -1,8 +1,11 @@
 use rosu_v2::model::beatmap::{BeatmapExtended, BeatmapsetExtended};
 use rosu_v2::model::user::UserBeatmapsetsKind;
+use uamappers_api::features::mappers::storage::codes::{
+    genre_code, language_code, mode_code, status_code,
+};
 use uamappers_api::features::mappers::storage::{
-    beatmap_profile_repo::NewBeatmapProfileRow, beatmapset_profile_repo::NewBeatmapsetProfileRow,
-    beatmapset_repo::BeatmapsetRepo,
+    beatmap_profile_repo::NewBeatmapProfileRow, beatmapset_extra_repo::NewBeatmapsetExtraRow,
+    beatmapset_profile_repo::NewBeatmapsetProfileRow,
     beatmapset_snapshot_weekly_repo::NewBeatmapsetSnapshotWeeklyRow,
 };
 
@@ -13,7 +16,7 @@ use crate::features::ingest::worker::jobs::mapper_enrich::raw::strip_mapset_raw;
 use crate::features::ingest::worker::jobs::mapper_enrich::snapshot::mapset_to_snapshot_row;
 
 pub struct BeatmapsetsPersistPage {
-    pub beatmapsets: Vec<uamappers_api::entities::beatmapset::ActiveModel>,
+    pub beatmapset_extras: Vec<NewBeatmapsetExtraRow>,
     pub beatmapset_profiles: Vec<NewBeatmapsetProfileRow>,
     pub beatmapset_snapshots: Vec<NewBeatmapsetSnapshotWeeklyRow>,
     pub beatmap_profiles: Vec<NewBeatmapProfileRow>,
@@ -33,11 +36,8 @@ pub fn kind_to_str(kind: UserBeatmapsetsKind) -> &'static str {
     }
 }
 
-pub fn build_page_payload(
-    beatmapsets_repo: &BeatmapsetRepo,
-    page: &[BeatmapsetExtended],
-) -> BeatmapsetsPersistPage {
-    let mut beatmapsets = Vec::new();
+pub fn build_page_payload(page: &[BeatmapsetExtended]) -> BeatmapsetsPersistPage {
+    let mut beatmapset_extras = Vec::new();
     let mut beatmapset_profiles = Vec::new();
     let mut beatmapset_snapshots = Vec::new();
     let mut beatmap_profiles = Vec::new();
@@ -48,8 +48,7 @@ pub fn build_page_payload(
         crate::features::ingest::worker::jobs::mapper_enrich::snapshot::snapshot_week(cached_at);
 
     for mapset in page {
-        let row = mapset_to_row(mapset);
-        beatmapsets.push(beatmapsets_repo.to_active(row));
+        beatmapset_extras.push(mapset_to_extra_row(mapset));
         beatmapset_ids.push(mapset.mapset_id as i64);
         beatmapset_profiles.push(mapset_to_profile_row(mapset, cached_at));
         beatmapset_snapshots.push(mapset_to_snapshot_row(mapset, weekly_snapshot));
@@ -61,7 +60,7 @@ pub fn build_page_payload(
     }
 
     BeatmapsetsPersistPage {
-        beatmapsets,
+        beatmapset_extras,
         beatmapset_profiles,
         beatmapset_snapshots,
         beatmap_profiles,
@@ -70,17 +69,23 @@ pub fn build_page_payload(
     }
 }
 
-pub fn mapset_to_row(
-    mapset: &BeatmapsetExtended,
-) -> uamappers_api::features::mappers::storage::beatmapset_repo::NewBeatmapsetRow {
+pub fn mapset_to_extra_row(mapset: &BeatmapsetExtended) -> NewBeatmapsetExtraRow {
     let raw = serde_json::to_value(mapset)
         .map(strip_mapset_raw)
         .unwrap_or(serde_json::Value::Null);
 
-    uamappers_api::features::mappers::storage::beatmapset_repo::NewBeatmapsetRow {
+    NewBeatmapsetExtraRow {
         osu_beatmapset_id: mapset.mapset_id as i64,
-        last_updated: offset_to_utc(mapset.last_updated),
-        raw,
+        creator_id: mapset.creator_id as i64,
+        creator_name: mapset.creator_name.to_string(),
+        ratings_json: raw
+            .get("ratings")
+            .cloned()
+            .unwrap_or_else(|| serde_json::json!([])),
+        anime_cover: raw
+            .get("animeCover")
+            .and_then(serde_json::Value::as_str)
+            .map(str::to_string),
     }
 }
 
@@ -90,25 +95,18 @@ pub fn mapset_to_profile_row(
 ) -> NewBeatmapsetProfileRow {
     let hype_current = mapset.hype.map(|h| h.current as i32).unwrap_or_default();
     let hype_required = mapset.hype.map(|h| h.required as i32).unwrap_or_default();
-    let difficulty_count = mapset
-        .maps
-        .as_ref()
-        .map(|maps| maps.len() as i32)
-        .unwrap_or(0);
 
     NewBeatmapsetProfileRow {
         osu_beatmapset_id: mapset.mapset_id as i64,
-        creator_id: mapset.creator_id as i64,
-        creator_name: mapset.creator_name.to_string(),
         artist: mapset.artist.clone(),
         artist_unicode: mapset.artist_unicode.clone(),
         title: mapset.title.clone(),
         title_unicode: mapset.title_unicode.clone(),
         source: mapset.source.clone(),
         tags: mapset.tags.clone(),
-        genre: mapset.genre.map(genre_to_str).map(str::to_string),
-        language: mapset.language.map(language_to_str).map(str::to_string),
-        status: rank_status_to_str(mapset.status).to_string(),
+        genre: mapset.genre.map(genre_to_str).map(genre_code),
+        language: mapset.language.map(language_to_str).map(language_code),
+        status: status_code(rank_status_to_str(mapset.status)),
         submitted_date: mapset.submitted_date.map(offset_to_utc),
         ranked_date: mapset.ranked_date.map(offset_to_utc),
         last_updated: offset_to_utc(mapset.last_updated),
@@ -131,7 +129,6 @@ pub fn mapset_to_profile_row(
         card_url: mapset.covers.card.clone(),
         preview_url: mapset.preview_url.clone(),
         bpm: mapset.bpm,
-        difficulty_count,
         cached_at,
     }
 }
@@ -156,9 +153,8 @@ fn map_to_profile_row(
     NewBeatmapProfileRow {
         osu_beatmap_id: map.map_id as i64,
         osu_beatmapset_id: map.mapset_id as i64,
-        creator_id: map.creator_id as i64,
         version: map.version.clone(),
-        mode: mode_to_str(map.mode).to_string(),
+        mode: mode_code(mode_to_str(map.mode)),
         stars: map.stars,
         ar: map.ar,
         cs: map.cs,
@@ -174,7 +170,7 @@ fn map_to_profile_row(
         count_sliders: map.count_sliders as i32,
         count_spinners: map.count_spinners as i32,
         owners_json: to_json_array(map.owners.as_ref()),
-        status: rank_status_to_str(map.status).to_string(),
+        status: status_code(rank_status_to_str(map.status)),
         is_scoreable: map.is_scoreable,
         last_updated: offset_to_utc(map.last_updated),
         cached_at,

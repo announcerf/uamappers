@@ -9,17 +9,15 @@ use crate::entities::beatmapset_profile;
 #[derive(Clone, Debug)]
 pub struct NewBeatmapsetProfileRow {
     pub osu_beatmapset_id: i64,
-    pub creator_id: i64,
-    pub creator_name: String,
     pub artist: String,
     pub artist_unicode: Option<String>,
     pub title: String,
     pub title_unicode: Option<String>,
     pub source: String,
     pub tags: String,
-    pub genre: Option<String>,
-    pub language: Option<String>,
-    pub status: String,
+    pub genre: Option<i16>,
+    pub language: Option<i16>,
+    pub status: i16,
     pub submitted_date: Option<chrono::DateTime<Utc>>,
     pub ranked_date: Option<chrono::DateTime<Utc>>,
     pub last_updated: chrono::DateTime<Utc>,
@@ -42,7 +40,6 @@ pub struct NewBeatmapsetProfileRow {
     pub card_url: String,
     pub preview_url: String,
     pub bpm: f32,
-    pub difficulty_count: i32,
     pub cached_at: chrono::DateTime<Utc>,
 }
 
@@ -97,8 +94,6 @@ impl BeatmapsetProfileRepo {
                 .on_conflict(
                     OnConflict::column(beatmapset_profile::Column::OsuBeatmapsetId)
                         .update_columns([
-                            beatmapset_profile::Column::CreatorId,
-                            beatmapset_profile::Column::CreatorName,
                             beatmapset_profile::Column::Artist,
                             beatmapset_profile::Column::ArtistUnicode,
                             beatmapset_profile::Column::Title,
@@ -130,7 +125,6 @@ impl BeatmapsetProfileRepo {
                             beatmapset_profile::Column::CardUrl,
                             beatmapset_profile::Column::PreviewUrl,
                             beatmapset_profile::Column::Bpm,
-                            beatmapset_profile::Column::DifficultyCount,
                             beatmapset_profile::Column::CachedAt,
                             beatmapset_profile::Column::UpdatedAt,
                         ])
@@ -148,8 +142,6 @@ impl BeatmapsetProfileRepo {
 
         beatmapset_profile::ActiveModel {
             osu_beatmapset_id: Set(row.osu_beatmapset_id),
-            creator_id: Set(row.creator_id),
-            creator_name: Set(row.creator_name),
             artist: Set(row.artist),
             artist_unicode: Set(row.artist_unicode),
             title: Set(row.title),
@@ -181,9 +173,7 @@ impl BeatmapsetProfileRepo {
             card_url: Set(row.card_url),
             preview_url: Set(row.preview_url),
             bpm: Set(row.bpm),
-            difficulty_count: Set(row.difficulty_count),
             cached_at: Set(row.cached_at),
-            created_at: Set(now),
             updated_at: Set(now),
         }
     }
