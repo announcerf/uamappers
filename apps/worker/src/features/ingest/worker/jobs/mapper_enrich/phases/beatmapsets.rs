@@ -2,10 +2,11 @@ use rosu_v2::model::beatmap::BeatmapsetExtended;
 use rosu_v2::error::OsuError;
 use rosu_v2::model::user::UserBeatmapsetsKind;
 use uamappers_api::entities::ua_mapper;
+use std::collections::HashMap;
 
 use crate::shared::errors::WorkerError;
 
-use super::super::projection::{build_page_payload, kind_to_str};
+use super::super::projection::{build_page_payload, kind_to_str, PersistedBeatmapset};
 use super::super::storage::persist_beatmapsets_page;
 use super::super::types::{MapperEnrich, BEATMAPSETS_SCAN_NAME};
 use super::{next_beatmapsets_cursor, BeatmapsetsCursor};
@@ -94,19 +95,53 @@ impl MapperEnrich {
     async fn load_beatmapset_details(
         &self,
         page: Vec<BeatmapsetExtended>,
-    ) -> Result<Vec<BeatmapsetExtended>, WorkerError> {
+    ) -> Result<Vec<PersistedBeatmapset>, WorkerError> {
+        let ids = page.iter().map(|row| row.mapset_id as i64).collect::<Vec<_>>();
+        let existing = self
+            .beatmapset_profiles_repo
+            .list_by_osu_beatmapset_ids(&ids)
+            .await?
+            .into_iter()
+            .map(|row| (row.osu_beatmapset_id, row))
+            .collect::<HashMap<_, _>>();
+        let extras = self
+            .beatmapset_extras_repo
+            .list_by_osu_beatmapset_ids(&ids)
+            .await?
+            .into_iter()
+            .map(|row| (row.osu_beatmapset_id, row))
+            .collect::<HashMap<_, _>>();
         let mut detailed = Vec::with_capacity(page.len());
 
         for mapset in page {
+            let existing_profile = existing.get(&(mapset.mapset_id as i64));
+            let existing_extra = extras.get(&(mapset.mapset_id as i64));
+
+            if !needs_detail_fetch(existing_profile, existing_extra, &mapset) {
+                detailed.push(PersistedBeatmapset {
+                    mapset,
+                    details_unavailable: existing_extra
+                        .map(|row| row.details_unavailable)
+                        .unwrap_or(false),
+                });
+                continue;
+            }
+
             match self.osu_client.beatmapset(mapset.mapset_id).await {
-                Ok(full) => detailed.push(full),
+                Ok(full) => detailed.push(PersistedBeatmapset {
+                    mapset: full,
+                    details_unavailable: false,
+                }),
                 Err(WorkerError::OsuApi(OsuError::NotFound)) => {
                     tracing::warn!(
                         job = BEATMAPSETS_SCAN_NAME,
                         osu_beatmapset_id = mapset.mapset_id,
                         "beatmapset details missing, using partial user_beatmapsets payload"
                     );
-                    detailed.push(mapset);
+                    detailed.push(PersistedBeatmapset {
+                        mapset,
+                        details_unavailable: true,
+                    });
                 }
                 Err(err) => return Err(err),
             }
@@ -114,4 +149,29 @@ impl MapperEnrich {
 
         Ok(detailed)
     }
+}
+
+fn needs_detail_fetch(
+    existing: Option<&uamappers_api::entities::beatmapset_profile::Model>,
+    extra: Option<&uamappers_api::entities::beatmapset_extra::Model>,
+    mapset: &BeatmapsetExtended,
+) -> bool {
+    if mapset.genre.is_some() && mapset.language.is_some() {
+        return false;
+    }
+
+    let Some(existing) = existing else {
+        return true;
+    };
+
+    let is_same_version = existing.last_updated.timestamp() == mapset.last_updated.unix_timestamp();
+    let details_unavailable = extra.map(|row| row.details_unavailable).unwrap_or(false);
+
+    if details_unavailable && is_same_version {
+        return false;
+    }
+
+    let has_existing_metadata = existing.genre.is_some() && existing.language.is_some();
+
+    !(has_existing_metadata && is_same_version)
 }

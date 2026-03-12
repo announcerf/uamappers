@@ -9,8 +9,8 @@ pub struct NewBeatmapsetExtraRow {
     pub osu_beatmapset_id: i64,
     pub creator_id: i64,
     pub creator_name: String,
-    pub ratings_json: sea_orm::JsonValue,
     pub anime_cover: Option<String>,
+    pub details_unavailable: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -66,8 +66,8 @@ impl BeatmapsetExtraRepo {
                         .update_columns([
                             beatmapset_extra::Column::CreatorId,
                             beatmapset_extra::Column::CreatorName,
-                            beatmapset_extra::Column::RatingsJson,
                             beatmapset_extra::Column::AnimeCover,
+                            beatmapset_extra::Column::DetailsUnavailable,
                             beatmapset_extra::Column::UpdatedAt,
                         ])
                         .to_owned(),
@@ -86,8 +86,8 @@ impl BeatmapsetExtraRepo {
             osu_beatmapset_id: Set(row.osu_beatmapset_id),
             creator_id: Set(row.creator_id),
             creator_name: Set(row.creator_name),
-            ratings_json: Set(row.ratings_json),
             anime_cover: Set(row.anime_cover),
+            details_unavailable: Set(row.details_unavailable),
             updated_at: Set(now),
         }
     }

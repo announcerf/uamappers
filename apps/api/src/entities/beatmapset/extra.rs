@@ -1,5 +1,4 @@
 use sea_orm::entity::prelude::*;
-use sea_orm::JsonValue;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
 #[sea_orm(table_name = "beatmapset_extras")]
@@ -8,8 +7,8 @@ pub struct Model {
     pub osu_beatmapset_id: i64,
     pub creator_id: i64,
     pub creator_name: String,
-    pub ratings_json: JsonValue,
     pub anime_cover: Option<String>,
+    pub details_unavailable: bool,
     pub updated_at: DateTimeUtc,
 }
 

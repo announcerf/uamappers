@@ -23,6 +23,8 @@ pub mod m20260312_000022_remove_creator_fields_from_profiles;
 pub mod m20260312_000023_add_hot_read_indexes;
 pub mod m20260312_000024_compact_storage_codes;
 pub mod m20260312_000025_drop_redundant_created_at;
+pub mod m20260313_000026_add_details_unavailable_to_beatmapset_extras;
+pub mod m20260313_000027_reduce_beatmapset_storage_fields;
 use sea_orm_migration::prelude::*;
 
 pub struct Migrator;
@@ -55,6 +57,8 @@ impl MigratorTrait for Migrator {
             Box::new(m20260312_000023_add_hot_read_indexes::Migration),
             Box::new(m20260312_000024_compact_storage_codes::Migration),
             Box::new(m20260312_000025_drop_redundant_created_at::Migration),
+            Box::new(m20260313_000026_add_details_unavailable_to_beatmapset_extras::Migration),
+            Box::new(m20260313_000027_reduce_beatmapset_storage_fields::Migration),
         ]
     }
 }

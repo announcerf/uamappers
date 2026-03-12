@@ -128,6 +128,7 @@ impl OsuClient {
                     ));
                 }
                 Some(Ok(next)) => return Ok(next),
+                Some(Err(err @ rosu_v2::error::OsuError::NotFound)) => return Err(err.into()),
                 Some(Err(err)) => {
                     attempt += 1;
                     if attempt >= 5 {
@@ -154,6 +155,7 @@ impl OsuClient {
             match current.get_next(&self.osu).await {
                 None => return Ok(None),
                 Some(Ok(next)) => return Ok(Some(next)),
+                Some(Err(err @ rosu_v2::error::OsuError::NotFound)) => return Err(err.into()),
                 Some(Err(err)) => {
                     attempt += 1;
                     if attempt >= 5 {
@@ -223,6 +225,7 @@ impl OsuClient {
             self.throttle.acquire().await;
             match action().into_future().await {
                 Ok(result) => return Ok(result),
+                Err(err @ rosu_v2::error::OsuError::NotFound) => return Err(err.into()),
                 Err(err) => {
                     attempt += 1;
                     if attempt >= 5 {
