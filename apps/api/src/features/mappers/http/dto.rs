@@ -36,7 +36,7 @@ pub struct UaMapperSearchQuery {
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UaMapperProfileDto {
-    pub mapper: MapperDetailsDto,
+    pub mapper: MapperDto,
     pub stats: Option<MapperStatsCurrentDto>,
     pub leaderboard_positions: Vec<MapperLeaderboardPositionDto>,
     pub charts: MapperChartsResponseDto,
@@ -44,7 +44,14 @@ pub struct UaMapperProfileDto {
 
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct MapperDetailsDto {
+pub struct MapperDto {
+    pub bio: MapperBioDto,
+    pub tracking: MapperTrackingDto,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MapperBioDto {
     pub osu_user_id: i64,
     pub username: String,
     pub country: String,
@@ -60,11 +67,17 @@ pub struct MapperDetailsDto {
     pub is_bng: bool,
     pub is_nat: bool,
     pub is_gmt: bool,
-    pub is_probationary_bn: bool,
+    pub is_probation_bn: bool,
     pub is_full_bn: bool,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct MapperTrackingDto {
     pub cached_at: chrono::DateTime<chrono::Utc>,
     pub first_seen_at: chrono::DateTime<chrono::Utc>,
     pub last_seen_at: chrono::DateTime<chrono::Utc>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 

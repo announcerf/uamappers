@@ -29,7 +29,7 @@ fn mapper_profile_to_dto_includes_stats_positions_and_charts() {
             "isBng": true,
             "isNat": false,
             "isGmt": false,
-            "isProbationaryBn": false,
+            "isProbationBn": false,
             "isFullBn": true,
             "cachedAt": now
         })),
@@ -100,7 +100,9 @@ fn mapper_profile_to_dto_includes_stats_positions_and_charts() {
     assert_eq!(dto.leaderboard_positions.len(), 1);
     assert_eq!(dto.charts.osu_user_id, 42);
     assert_eq!(dto.charts.points.len(), 1);
-    assert_eq!(dto.mapper.username, "mapper");
-    assert_eq!(dto.mapper.country_code, "UA");
+    assert_eq!(dto.mapper.bio.username, "mapper");
+    assert_eq!(dto.mapper.bio.country_code, "UA");
+    assert_eq!(dto.mapper.tracking.cached_at, now);
+    assert_eq!(dto.mapper.tracking.created_at, now);
     assert_eq!(dto.stats.expect("stats").kudosu.available, 2);
 }

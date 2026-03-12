@@ -86,7 +86,7 @@ fn user_projection_keeps_only_required_fields() {
     assert!(row.is_bng);
     assert!(row.is_gmt);
     assert!(row.is_full_bn);
-    assert!(!row.is_probationary_bn);
+    assert!(!row.is_probation_bn);
 }
 
 #[test]

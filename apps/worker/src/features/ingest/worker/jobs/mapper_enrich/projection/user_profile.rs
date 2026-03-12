@@ -27,7 +27,7 @@ pub fn user_to_mapper_fingerprint(
         is_bng: user.is_bng.unwrap_or(false),
         is_nat: user.is_nat.unwrap_or(false),
         is_gmt: user.is_gmt.unwrap_or(false),
-        is_probationary_bn: user.is_limited_bn.unwrap_or(false),
+        is_probation_bn: user.is_limited_bn.unwrap_or(false),
         is_full_bn: user.is_full_bn.unwrap_or(false),
         cached_at,
     }

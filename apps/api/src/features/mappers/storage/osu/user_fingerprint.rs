@@ -18,7 +18,7 @@ pub struct MapperFingerprint {
     pub is_bng: bool,
     pub is_nat: bool,
     pub is_gmt: bool,
-    pub is_probationary_bn: bool,
+    pub is_probation_bn: bool,
     pub is_full_bn: bool,
     pub cached_at: DateTime<Utc>,
 }

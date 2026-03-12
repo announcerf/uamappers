@@ -23,7 +23,7 @@ fn aggregate_computes_primary_metrics() {
         is_bng: false,
         is_nat: false,
         is_gmt: false,
-        is_probationary_bn: false,
+        is_probation_bn: false,
         is_full_bn: false,
         cached_at: Utc::now(),
     };

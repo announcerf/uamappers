@@ -7,33 +7,38 @@ use uamappers_api::features::beatmapsets::http::dto::{
 };
 use uamappers_api::features::leaderboards::http::dto::LeaderboardKeyDto;
 use uamappers_api::features::mappers::http::dto::{
-    MapperChartsPointDto, MapperChartsResponseDto, MapperLeaderboardPositionDto,
-    MapperDetailsDto, MapperKudosuDto, MapperStatsCurrentDto, UaMapperProfileDto,
+    MapperBioDto, MapperChartsPointDto, MapperChartsResponseDto, MapperDto, MapperKudosuDto,
+    MapperLeaderboardPositionDto, MapperStatsCurrentDto, MapperTrackingDto, UaMapperProfileDto,
 };
 
 #[test]
 fn mapper_profile_serializes_in_camel_case() {
     let now = Utc::now();
     let dto = UaMapperProfileDto {
-        mapper: MapperDetailsDto {
-            osu_user_id: 1,
-            username: "mapper".to_string(),
-            country: "Ukraine".to_string(),
-            country_code: "UA".to_string(),
-            avatar_url: "a".to_string(),
-            cover: json!({"url": "c", "customUrl": null}),
-            badges: json!([]),
-            groups: json!([]),
-            primary_mode: "osu".to_string(),
-            is_bng: false,
-            is_nat: false,
-            is_gmt: false,
-            is_probationary_bn: false,
-            is_full_bn: true,
-            cached_at: now,
-            first_seen_at: now,
-            last_seen_at: now,
-            updated_at: now,
+        mapper: MapperDto {
+            bio: MapperBioDto {
+                osu_user_id: 1,
+                username: "mapper".to_string(),
+                country: "Ukraine".to_string(),
+                country_code: "UA".to_string(),
+                avatar_url: "a".to_string(),
+                cover: json!({"url": "c", "customUrl": null}),
+                badges: json!([]),
+                groups: json!([]),
+                primary_mode: "osu".to_string(),
+                is_bng: false,
+                is_nat: false,
+                is_gmt: false,
+                is_probation_bn: false,
+                is_full_bn: true,
+            },
+            tracking: MapperTrackingDto {
+                cached_at: now,
+                first_seen_at: now,
+                last_seen_at: now,
+                created_at: now,
+                updated_at: now,
+            },
         },
         stats: Some(MapperStatsCurrentDto {
             total_mapsets: 1,
@@ -99,6 +104,8 @@ fn mapper_profile_serializes_in_camel_case() {
     let value = serde_json::to_value(dto).expect("serialize mapper profile");
     assert_camel_case_keys(&value);
     assert!(value.get("leaderboardPositions").is_some());
+    assert!(value["mapper"].get("bio").is_some());
+    assert!(value["mapper"].get("tracking").is_some());
     assert!(value.get("leaderboard_positions").is_none());
 }
 

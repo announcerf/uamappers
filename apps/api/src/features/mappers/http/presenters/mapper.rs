@@ -3,9 +3,9 @@ use crate::features::mappers::storage::osu_user_fingerprint::{MapperFingerprint,
 use crate::features::mappers::usecases::{MapperCharts, MapperPage, MapperProfile};
 
 use super::super::dto::{
-    MapperChartsPointDto, MapperChartsResponseDto, MapperDetailsDto, MapperKudosuDto,
-    MapperLeaderboardPositionDto, MapperStatsCurrentDto, UaMapperDto, UaMapperListResponse,
-    UaMapperProfileDto,
+    MapperBioDto, MapperChartsPointDto, MapperChartsResponseDto, MapperDto, MapperKudosuDto,
+    MapperLeaderboardPositionDto, MapperStatsCurrentDto, MapperTrackingDto, UaMapperDto,
+    UaMapperListResponse, UaMapperProfileDto,
 };
 
 pub fn ua_mapper_to_dto(model: ua_mapper::Model) -> UaMapperDto {
@@ -30,7 +30,7 @@ pub fn mapper_page_to_dto(page: MapperPage) -> UaMapperListResponse {
 }
 
 pub fn mapper_profile_to_dto(profile: MapperProfile) -> UaMapperProfileDto {
-    let mapper = merge_mapper(profile.mapper.clone(), profile.mapper_fingerprint);
+    let mapper = build_mapper(profile.mapper.clone(), profile.mapper_fingerprint);
 
     UaMapperProfileDto {
         mapper,
@@ -71,34 +71,39 @@ pub fn mapper_charts_to_dto(charts: MapperCharts) -> MapperChartsResponseDto {
     }
 }
 
-fn merge_mapper(
+fn build_mapper(
     mapper: crate::entities::ua_mapper::Model,
     fingerprint: Option<serde_json::Value>,
-) -> MapperDetailsDto {
+) -> MapperDto {
     let fingerprint = fingerprint
         .as_ref()
         .and_then(MapperFingerprint::from_raw)
         .unwrap_or_else(|| fallback_fingerprint(&mapper));
 
-    MapperDetailsDto {
-        osu_user_id: mapper.osu_user_id,
-        username: mapper.username,
-        country: fingerprint.country,
-        country_code: mapper.country_code,
-        avatar_url: fingerprint.avatar_url,
-        cover: fingerprint.cover,
-        badges: fingerprint.badges,
-        groups: fingerprint.groups,
-        primary_mode: fingerprint.primary_mode,
-        is_bng: fingerprint.is_bng,
-        is_nat: fingerprint.is_nat,
-        is_gmt: fingerprint.is_gmt,
-        is_probationary_bn: fingerprint.is_probationary_bn,
-        is_full_bn: fingerprint.is_full_bn,
-        cached_at: fingerprint.cached_at,
-        first_seen_at: mapper.first_seen_at,
-        last_seen_at: mapper.last_seen_at,
-        updated_at: mapper.updated_at,
+    MapperDto {
+        bio: MapperBioDto {
+            osu_user_id: mapper.osu_user_id,
+            username: mapper.username,
+            country: fingerprint.country,
+            country_code: mapper.country_code,
+            avatar_url: fingerprint.avatar_url,
+            cover: fingerprint.cover,
+            badges: fingerprint.badges,
+            groups: fingerprint.groups,
+            primary_mode: fingerprint.primary_mode,
+            is_bng: fingerprint.is_bng,
+            is_nat: fingerprint.is_nat,
+            is_gmt: fingerprint.is_gmt,
+            is_probation_bn: fingerprint.is_probation_bn,
+            is_full_bn: fingerprint.is_full_bn,
+        },
+        tracking: MapperTrackingDto {
+            cached_at: fingerprint.cached_at,
+            first_seen_at: mapper.first_seen_at,
+            last_seen_at: mapper.last_seen_at,
+            created_at: mapper.created_at,
+            updated_at: mapper.updated_at,
+        },
     }
 }
 
@@ -120,7 +125,7 @@ fn fallback_fingerprint(mapper: &crate::entities::ua_mapper::Model) -> MapperFin
         is_bng: false,
         is_nat: false,
         is_gmt: false,
-        is_probationary_bn: false,
+        is_probation_bn: false,
         is_full_bn: false,
         cached_at: mapper.updated_at,
     }
