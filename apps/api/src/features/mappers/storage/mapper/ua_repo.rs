@@ -171,6 +171,17 @@ impl UaMapperRepo {
         Ok(rows.into_iter().map(|r| r.osu_user_id).collect())
     }
 
+    pub async fn list_existing_rows(&self, ids: &[i64]) -> Result<Vec<ua_mapper::Model>, DbErr> {
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        ua_mapper::Entity::find()
+            .filter(ua_mapper::Column::OsuUserId.is_in(ids.to_vec()))
+            .all(&self.db)
+            .await
+    }
+
     pub async fn upsert_with<C: ConnectionTrait>(
         &self,
         db: &C,

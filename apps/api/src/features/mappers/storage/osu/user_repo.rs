@@ -1,6 +1,6 @@
 use chrono::Utc;
 use sea_orm::sea_query::OnConflict;
-use sea_orm::{ConnectionTrait, DatabaseConnection, DbErr, EntityTrait, Set};
+use sea_orm::{ColumnTrait, ConnectionTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set};
 
 use crate::entities::osu_user;
 
@@ -24,6 +24,20 @@ impl OsuUserRepo {
     ) -> Result<Option<osu_user::Model>, DbErr> {
         osu_user::Entity::find_by_id(osu_user_id)
             .one(&self.db)
+            .await
+    }
+
+    pub async fn list_by_osu_user_ids(
+        &self,
+        ids: &[i64],
+    ) -> Result<Vec<osu_user::Model>, DbErr> {
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        osu_user::Entity::find()
+            .filter(osu_user::Column::OsuUserId.is_in(ids.to_vec()))
+            .all(&self.db)
             .await
     }
 

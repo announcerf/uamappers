@@ -16,6 +16,8 @@ pub mod mapper_profile_repo;
 pub mod mapper_stats_current_repo;
 #[path = "osu/user_beatmapset_repo.rs"]
 pub mod osu_user_beatmapset_repo;
+#[path = "osu/user_fingerprint.rs"]
+pub mod osu_user_fingerprint;
 #[path = "osu/user_repo.rs"]
 pub mod osu_user_repo;
 #[path = "mapper/ua_repo.rs"]
