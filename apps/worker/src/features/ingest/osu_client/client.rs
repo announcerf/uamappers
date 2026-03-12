@@ -207,6 +207,10 @@ impl OsuClient {
         .await
     }
 
+    pub async fn beatmapset(&self, mapset_id: u32) -> Result<BeatmapsetExtended, WorkerError> {
+        self.retry(|| self.osu.beatmapset(mapset_id)).await
+    }
+
     async fn retry<T, Fut, F>(&self, mut action: F) -> Result<T, WorkerError>
     where
         F: FnMut() -> Fut,
