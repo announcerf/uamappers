@@ -24,14 +24,12 @@ pub fn build_leaderboard_rows(
     for (index, stat) in stats.iter().enumerate() {
         let current_rank = index as i32 + 1;
         let previous_rank = previous.get(&stat.osu_user_id).map(|row| row.current_rank);
-        let rank_delta = previous_rank.map(|prev| prev - current_rank).unwrap_or(0);
 
         rows.push(NewLeaderboardPositionCurrentRow {
             leaderboard_key: leaderboard_key.to_string(),
             osu_user_id: stat.osu_user_id,
             current_rank,
             previous_rank,
-            rank_delta,
             measured_at,
         });
     }

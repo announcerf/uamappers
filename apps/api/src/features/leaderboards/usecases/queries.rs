@@ -56,7 +56,7 @@ pub async fn get_leaderboard(
         items.push(LeaderboardRow {
             rank: row.current_rank,
             previous_rank: row.previous_rank,
-            rank_delta: row.rank_delta,
+            rank_delta: rank_delta(row.current_rank, row.previous_rank),
             osu_user_id: row.osu_user_id,
             username: mapper.username.clone(),
             avatar_url: fingerprint
@@ -88,6 +88,10 @@ pub async fn get_leaderboard(
         next_cursor,
         items,
     })
+}
+
+fn rank_delta(current_rank: i32, previous_rank: Option<i32>) -> i32 {
+    previous_rank.map(|prev| prev - current_rank).unwrap_or(0)
 }
 
 fn leaderboard_metric_key(leaderboard: LeaderboardKeyDto) -> &'static str {

@@ -9,7 +9,6 @@ pub struct Model {
     pub osu_user_id: i64,
     pub current_rank: i32,
     pub previous_rank: Option<i32>,
-    pub rank_delta: i32,
     pub measured_at: DateTimeUtc,
     pub updated_at: DateTimeUtc,
 }

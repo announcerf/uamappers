@@ -15,7 +15,6 @@ pub struct NewLeaderboardPositionCurrentRow {
     pub osu_user_id: i64,
     pub current_rank: i32,
     pub previous_rank: Option<i32>,
-    pub rank_delta: i32,
     pub measured_at: chrono::DateTime<Utc>,
 }
 
@@ -110,7 +109,6 @@ impl LeaderboardPositionCurrentRepo {
                     .update_columns([
                         leaderboard_position_current::Column::CurrentRank,
                         leaderboard_position_current::Column::PreviousRank,
-                        leaderboard_position_current::Column::RankDelta,
                         leaderboard_position_current::Column::MeasuredAt,
                         leaderboard_position_current::Column::UpdatedAt,
                     ])
@@ -134,7 +132,6 @@ impl LeaderboardPositionCurrentRepo {
             osu_user_id: Set(row.osu_user_id),
             current_rank: Set(row.current_rank),
             previous_rank: Set(row.previous_rank),
-            rank_delta: Set(row.rank_delta),
             measured_at: Set(row.measured_at),
             updated_at: Set(now),
         }
