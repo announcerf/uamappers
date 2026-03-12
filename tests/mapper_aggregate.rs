@@ -1,33 +1,31 @@
 use chrono::{TimeZone, Utc};
 use serde_json::json;
-use uamappers_api::entities::{beatmap_profile, beatmapset_profile, mapper_profile, osu_user_beatmapset};
+use uamappers_api::entities::{beatmap_profile, beatmapset_profile, osu_user_beatmapset};
+use uamappers_api::features::mappers::storage::osu_user_fingerprint::{MapperFingerprint, MapperKudosu};
 use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::aggregate::build_mapper_stats_row;
 
 #[test]
 fn aggregate_computes_primary_metrics() {
-    let mapper_profile = mapper_profile::Model {
-        osu_user_id: 42,
+    let mapper_profile = MapperFingerprint {
         username: "Mapper".to_string(),
-        avatar_url: "https://avatar".to_string(),
         country: "Ukraine".to_string(),
         country_code: "UA".to_string(),
-        cover_url: "https://cover".to_string(),
+        avatar_url: "https://avatar".to_string(),
+        cover: json!({"url": "https://cover"}),
         primary_mode: "osu".to_string(),
-        join_date: Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap(),
-        last_visit: None,
         mapping_followers: 15,
-        kudosu_available: 2,
-        kudosu_total: 7,
-        badges_json: json!([]),
-        groups_json: json!([]),
+        kudosu: MapperKudosu {
+            total: 7,
+            available: 2,
+        },
+        badges: json!([]),
+        groups: json!([]),
         is_bng: false,
         is_nat: false,
         is_gmt: false,
-        is_limited_bn: false,
+        is_probationary_bn: false,
         is_full_bn: false,
         cached_at: Utc::now(),
-        created_at: Utc::now(),
-        updated_at: Utc::now(),
     };
 
     let relations = vec![
@@ -55,6 +53,7 @@ fn aggregate_computes_primary_metrics() {
     assert_eq!(row.loved_mapsets, 1);
     assert_eq!(row.total_playcount, 1500);
     assert_eq!(row.mapping_followers, 15);
+    assert_eq!(row.kudosu_available, 2);
     assert_eq!(row.kudosu_total, 7);
     assert_eq!(row.main_mode, "osu");
     assert!(row.has_ranked);

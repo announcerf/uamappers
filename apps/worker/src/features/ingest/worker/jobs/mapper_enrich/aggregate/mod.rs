@@ -6,6 +6,7 @@ pub use leaderboards::LEADERBOARD_KEYS;
 pub use stats::build_mapper_stats_row;
 
 use sea_orm::TransactionTrait;
+use uamappers_api::features::mappers::storage::osu_user_fingerprint::MapperFingerprint;
 
 use crate::shared::errors::WorkerError;
 
@@ -14,10 +15,13 @@ use super::types::MapperEnrich;
 
 impl MapperEnrich {
     pub(crate) async fn refresh_mapper_stats(&self, osu_user_id: i64) -> Result<(), WorkerError> {
-        let mapper_profile = self
-            .mapper_profiles_repo
+        let mapper_user = self
+            .osu_users_repo
             .get_by_osu_user_id(osu_user_id)
             .await?;
+        let mapper_fingerprint = mapper_user
+            .as_ref()
+            .and_then(|row| MapperFingerprint::from_raw(&row.raw));
         let relations = self
             .osu_user_beatmapsets_repo
             .list_by_osu_user_id(osu_user_id)
@@ -36,7 +40,7 @@ impl MapperEnrich {
 
         let row = build_mapper_stats_row(
             osu_user_id,
-            mapper_profile.as_ref(),
+            mapper_fingerprint.as_ref(),
             &relations,
             &beatmapsets,
             &beatmaps,

@@ -127,6 +127,7 @@ fn mapper_stats_snapshot_keeps_weekly_rollup_values() {
         last_mapset_updated_at: None,
         main_mode: "osu".to_string(),
         mapping_followers: 10,
+        kudosu_available: 12,
         kudosu_total: 20,
         has_ranked: true,
         has_loved: true,

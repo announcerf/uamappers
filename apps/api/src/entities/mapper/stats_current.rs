@@ -29,6 +29,7 @@ pub struct Model {
     pub last_mapset_updated_at: Option<DateTimeUtc>,
     pub main_mode: String,
     pub mapping_followers: i32,
+    pub kudosu_available: i32,
     pub kudosu_total: i32,
     pub has_ranked: bool,
     pub has_loved: bool,

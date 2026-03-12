@@ -1,6 +1,5 @@
-use uamappers_api::entities::{
-    beatmap_profile, beatmapset_profile, mapper_profile, osu_user_beatmapset,
-};
+use uamappers_api::entities::{beatmap_profile, beatmapset_profile, osu_user_beatmapset};
+use uamappers_api::features::mappers::storage::osu_user_fingerprint::MapperFingerprint;
 use uamappers_api::features::mappers::storage::mapper_stats_current_repo::NewMapperStatsCurrentRow;
 
 use super::stats_helpers::{
@@ -10,7 +9,7 @@ use super::stats_helpers::{
 
 pub fn build_mapper_stats_row(
     osu_user_id: i64,
-    mapper_profile: Option<&mapper_profile::Model>,
+    mapper_fingerprint: Option<&MapperFingerprint>,
     relations: &[osu_user_beatmapset::Model],
     beatmapsets: &[beatmapset_profile::Model],
     beatmaps: &[beatmap_profile::Model],
@@ -76,8 +75,15 @@ pub fn build_mapper_stats_row(
         first_ranked_date,
         last_mapset_updated_at,
         main_mode,
-        mapping_followers: mapper_profile.map(|row| row.mapping_followers).unwrap_or(0),
-        kudosu_total: mapper_profile.map(|row| row.kudosu_total).unwrap_or(0),
+        mapping_followers: mapper_fingerprint
+            .map(|row| row.mapping_followers)
+            .unwrap_or(0),
+        kudosu_available: mapper_fingerprint
+            .map(|row| row.kudosu.available)
+            .unwrap_or(0),
+        kudosu_total: mapper_fingerprint
+            .map(|row| row.kudosu.total)
+            .unwrap_or(0),
         has_ranked: ranked_mapsets > 0,
         has_loved: loved_mapsets > 0,
         has_guest: guest_mapsets > 0,
