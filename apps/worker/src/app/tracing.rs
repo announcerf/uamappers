@@ -1,12 +1,16 @@
+use chrono_tz::Europe::Kyiv;
 use tracing_subscriber::fmt::format::Writer;
 use tracing_subscriber::fmt::time::FormatTime;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-struct UtcRfc3339Millis;
+struct KyivTimeMillis;
 
-impl FormatTime for UtcRfc3339Millis {
+impl FormatTime for KyivTimeMillis {
     fn format_time(&self, w: &mut Writer<'_>) -> std::fmt::Result {
-        let ts = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
+        let ts = chrono::Utc::now()
+            .with_timezone(&Kyiv)
+            .format("%Y-%m-%d %H:%M:%S%.3f %Z")
+            .to_string();
         w.write_str(&ts)
     }
 }
@@ -30,7 +34,7 @@ pub fn init_tracing() {
         .with(
             tracing_subscriber::fmt::layer()
                 .compact()
-                .with_timer(UtcRfc3339Millis)
+                .with_timer(KyivTimeMillis)
                 .with_target(false)
                 .with_file(false)
                 .with_line_number(false)

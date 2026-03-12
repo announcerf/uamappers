@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use chrono::{DateTime, Utc};
+use chrono_tz::Europe::Kyiv;
 
 pub fn format_duration(duration: Duration) -> String {
     let total_ms: u64 = duration.as_millis().try_into().unwrap_or(u64::MAX);
@@ -19,6 +20,9 @@ pub fn format_duration(duration: Duration) -> String {
     }
 }
 
-pub fn format_utc(datetime: DateTime<Utc>) -> String {
-    datetime.format("%Y-%m-%d %H:%M:%S UTC").to_string()
+pub fn format_kyiv(datetime: DateTime<Utc>) -> String {
+    datetime
+        .with_timezone(&Kyiv)
+        .format("%Y-%m-%d %H:%M:%S %Z")
+        .to_string()
 }

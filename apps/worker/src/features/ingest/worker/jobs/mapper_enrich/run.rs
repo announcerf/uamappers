@@ -1,4 +1,4 @@
-use crate::shared::time::format_utc;
+use crate::shared::time::format_kyiv;
 
 use super::types::{MapperEnrich, BEATMAPSETS_SCAN_NAME, USERS_SCAN_NAME};
 use crate::shared::errors::WorkerError;
@@ -53,7 +53,7 @@ impl MapperEnrich {
                         mapsets,
                         relations,
                         mapper.osu_user_id,
-                        format_utc(mapper.last_seen_at),
+                        format_kyiv(mapper.last_seen_at),
                         started_at.elapsed().as_secs()
                     );
                 }
