@@ -2,7 +2,7 @@ use sea_orm::TransactionTrait;
 
 use crate::shared::errors::WorkerError;
 
-use super::types::{DiscoveryResume, MapperDiscovery};
+use super::super::types::{DiscoveryResume, MapperDiscovery};
 
 impl DiscoveryResume {
     pub(crate) fn page_index(&self) -> u32 {
@@ -47,17 +47,13 @@ impl MapperDiscovery {
     }
 
     pub(crate) async fn load_resume(&self) -> Result<DiscoveryResume, WorkerError> {
-        if self.config.discovery_oldest_first {
-            return Ok(DiscoveryResume::Start);
-        }
-        if !self.config.resume_from_checkpoint {
+        if self.config.discovery_oldest_first || !self.config.resume_from_checkpoint {
             return Ok(DiscoveryResume::Start);
         }
 
         let Some(state) = self.scan_state_repo.get_by_name(self.scan_name()).await? else {
             return Ok(DiscoveryResume::Start);
         };
-
         let Some(cursor) = state.cursor else {
             return Ok(DiscoveryResume::Start);
         };
@@ -78,15 +74,13 @@ impl MapperDiscovery {
 
     pub(crate) async fn record_failure(&self) -> Result<(), WorkerError> {
         let state = self.scan_state_repo.get_by_name(self.scan_name()).await?;
-        let retry_count = state.map(|s| s.retry_count).unwrap_or(0) + 1;
-
-        let backoff_seconds: i64 = 30 * 2_i64.saturating_pow(retry_count.clamp(0, 10) as u32);
+        let retry_count = state.map(|row| row.retry_count).unwrap_or(0) + 1;
+        let backoff_seconds = 30 * 2_i64.saturating_pow(retry_count.clamp(0, 10) as u32);
         let next_retry_at = chrono::Utc::now() + chrono::Duration::seconds(backoff_seconds);
 
         self.scan_state_repo
             .mark_error(self.scan_name(), retry_count, Some(next_retry_at))
             .await?;
-
         Ok(())
     }
 }

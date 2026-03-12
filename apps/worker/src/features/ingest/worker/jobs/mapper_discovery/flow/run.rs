@@ -1,7 +1,8 @@
 use crate::shared::errors::WorkerError;
 
-use super::creators::collect_creators;
-use super::types::{DiscoveryResume, MapperDiscovery};
+use super::super::creators::collect_creators;
+use super::super::types::{DiscoveryResume, MapperDiscovery};
+use super::search::{encode_search_cursor, page_is_before_or_equal_cutoff};
 
 impl MapperDiscovery {
     pub async fn run(&self) -> Result<(), WorkerError> {
@@ -27,7 +28,6 @@ impl MapperDiscovery {
                 .as_ref()
                 .and_then(|s| s.last_success_at),
         };
-
         let resume = self.load_resume().await?;
 
         match &resume {
@@ -55,43 +55,36 @@ impl MapperDiscovery {
             }
         };
 
-        let mut page_index: u32 = resume.page_index();
-        let mut processed_this_run: u32 = 0;
-
-        let mut pages_scanned: u32 = 0;
-        let mut _creators_seen: u64 = 0;
-        let mut _creators_existing: u64 = 0;
-        let mut _creators_missing: u64 = 0;
-        let mut ua_added: u64 = 0;
-        let mut ua_refreshed: u64 = 0;
-        let mut non_ua_skipped: u64 = 0;
-        let mut _page_delay_sleeps: u64 = 0;
-        let mut _page_delay_sleep_ms_total: u64 = 0;
+        let mut page_index = resume.page_index();
+        let mut processed_this_run = 0u32;
+        let mut pages_scanned = 0u32;
+        let mut ua_added = 0u64;
+        let mut ua_refreshed = 0u64;
+        let mut non_ua_skipped = 0u64;
 
         let (_stop_reason, _stopped_at_page) = loop {
             pages_scanned = pages_scanned.saturating_add(1);
             let creators = collect_creators(&result);
-            _creators_seen = _creators_seen.saturating_add(creators.len() as u64);
-            let creator_ids_i64: Vec<i64> = creators.iter().map(|c| c.osu_user_id as i64).collect();
-
+            let creator_ids_i64: Vec<i64> = creators
+                .iter()
+                .map(|creator| creator.osu_user_id as i64)
+                .collect();
             let existing = self
                 .ua_mappers_repo
                 .list_existing_ids(&creator_ids_i64)
                 .await?;
-            _creators_existing = _creators_existing.saturating_add(existing.len() as u64);
             let missing_ids: Vec<u32> = creators
                 .iter()
-                .filter(|c| !existing.contains(&(c.osu_user_id as i64)))
-                .map(|c| c.osu_user_id)
+                .filter(|creator| !existing.contains(&(creator.osu_user_id as i64)))
+                .map(|creator| creator.osu_user_id)
                 .collect();
-            _creators_missing = _creators_missing.saturating_add(missing_ids.len() as u64);
 
-            let mut ua_users: Vec<(i64, String, String)> = Vec::new();
-
+            let mut ua_users = Vec::new();
             for creator in &creators {
                 if !existing.contains(&(creator.osu_user_id as i64)) {
                     continue;
                 }
+
                 ua_refreshed = ua_refreshed.saturating_add(1);
                 ua_users.push((
                     creator.osu_user_id as i64,
@@ -101,14 +94,13 @@ impl MapperDiscovery {
             }
 
             for chunk in missing_ids.chunks(self.config.batch_size) {
-                let user_ids: Vec<u32> = chunk.to_vec();
-                let users = self.osu_client.users(user_ids).await?;
-
+                let users = self.osu_client.users(chunk.iter().copied()).await?;
                 for user in users {
                     if user.country_code != "UA" {
                         non_ua_skipped = non_ua_skipped.saturating_add(1);
                         continue;
                     }
+
                     ua_added = ua_added.saturating_add(1);
                     ua_users.push((
                         user.user_id as i64,
@@ -122,7 +114,6 @@ impl MapperDiscovery {
                 (Some(cutoff), false) => page_is_before_or_equal_cutoff(&result, cutoff),
                 _ => false,
             };
-
             let has_more = result.has_more();
             let next_cursor = match (stop_after_this_page, has_more) {
                 (true, _) => None,
@@ -130,23 +121,21 @@ impl MapperDiscovery {
                 (false, false) => None,
             };
 
-            let save_checkpoint = !self.config.discovery_oldest_first;
-            self.persist_page(ua_users, next_cursor, save_checkpoint, page_index)
-                .await?;
-
-            let progress_every = self.config.progress_log_every;
-            if progress_every > 0 && (pages_scanned as u64).is_multiple_of(progress_every) {
-                let elapsed = started_at.elapsed();
-                let _ = page_index;
-                tracing::info!(
-                    "discovery pages={} added={} refreshed={} skipped={} {}s",
-                    pages_scanned,
-                    ua_added,
-                    ua_refreshed,
-                    non_ua_skipped,
-                    elapsed.as_secs()
-                );
-            }
+            self.persist_page(
+                ua_users,
+                next_cursor,
+                !self.config.discovery_oldest_first,
+                page_index,
+            )
+            .await?;
+            log_progress(
+                self.config.progress_log_every,
+                pages_scanned,
+                ua_added,
+                ua_refreshed,
+                non_ua_skipped,
+                started_at.elapsed(),
+            );
 
             if stop_after_this_page || !has_more {
                 let stop_reason = match (stop_after_this_page, has_more) {
@@ -157,74 +146,60 @@ impl MapperDiscovery {
                 break (stop_reason, Some(page_index));
             }
 
-            processed_this_run += 1;
-            if let Some(max_pages) = self.config.max_pages
-                && processed_this_run >= max_pages
-            {
+            processed_this_run = processed_this_run.saturating_add(1);
+            if self.reached_max_pages(processed_this_run) {
                 break ("max_pages", Some(page_index));
             }
 
-            let delay_ms = self.config.page_delay_ms;
-            if delay_ms > 0 {
-                _page_delay_sleeps = _page_delay_sleeps.saturating_add(1);
-                _page_delay_sleep_ms_total = _page_delay_sleep_ms_total.saturating_add(delay_ms);
-            }
-            tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+            tokio::time::sleep(std::time::Duration::from_millis(self.config.page_delay_ms)).await;
             let Some(next) = self.osu_client.beatmapset_search_next(&result).await? else {
                 break ("no_next_page", Some(page_index));
             };
             result = next;
-            page_index += 1;
+            page_index = page_index.saturating_add(1);
         };
 
         if !self.config.discovery_oldest_first {
             self.scan_state_repo.mark_success(self.scan_name()).await?;
         }
 
-        let elapsed = started_at.elapsed();
         tracing::info!(
             "discovery done pages={} added={} refreshed={} skipped={} {}s",
             pages_scanned,
             ua_added,
             ua_refreshed,
             non_ua_skipped,
-            elapsed.as_secs()
+            started_at.elapsed().as_secs()
         );
         Ok(())
     }
-}
 
-fn encode_search_cursor(result: &rosu_v2::prelude::BeatmapsetSearchResult) -> Option<String> {
-    let value = serde_json::to_value(result).ok()?;
-    let cursor = value.get("cursor_string")?.as_str()?;
-    if cursor.is_empty() {
-        return None;
+    fn reached_max_pages(&self, processed_this_run: u32) -> bool {
+        match self.config.max_pages {
+            Some(max_pages) => processed_this_run >= max_pages,
+            None => false,
+        }
     }
-    Some(format!("cursor:{}", cursor))
 }
 
-fn page_is_before_or_equal_cutoff(
-    result: &rosu_v2::prelude::BeatmapsetSearchResult,
-    cutoff: chrono::DateTime<chrono::Utc>,
-) -> bool {
-    let mut min: Option<chrono::DateTime<chrono::Utc>> = None;
-    for mapset in &result.mapsets {
-        let dt = offset_to_utc(mapset.last_updated);
-        min = Some(match min {
-            Some(current) => current.min(dt),
-            None => dt,
-        });
+fn log_progress(
+    progress_every: u64,
+    pages_scanned: u32,
+    ua_added: u64,
+    ua_refreshed: u64,
+    non_ua_skipped: u64,
+    elapsed: std::time::Duration,
+) {
+    if progress_every == 0 || !(pages_scanned as u64).is_multiple_of(progress_every) {
+        return;
     }
 
-    min.is_some_and(|value| value <= cutoff)
-}
-
-fn offset_to_utc(dt: time::OffsetDateTime) -> chrono::DateTime<chrono::Utc> {
-    use chrono::{TimeZone, Utc};
-    let secs = dt.unix_timestamp();
-    let nanos: u32 = dt.nanosecond();
-
-    Utc.timestamp_opt(secs, nanos)
-        .single()
-        .unwrap_or_else(|| Utc.timestamp_opt(secs, 0).single().unwrap())
+    tracing::info!(
+        "discovery pages={} added={} refreshed={} skipped={} {}s",
+        pages_scanned,
+        ua_added,
+        ua_refreshed,
+        non_ua_skipped,
+        elapsed.as_secs()
+    );
 }
