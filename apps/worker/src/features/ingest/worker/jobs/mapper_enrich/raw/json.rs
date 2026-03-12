@@ -1,10 +1,12 @@
 use serde_json::Value;
 
-pub fn strip_mapset_raw(mut value: Value) -> Value {
-    let Value::Object(obj) = &mut value else {
-        return value;
+pub fn strip_mapset_raw(value: Value) -> Value {
+    let Value::Object(obj) = value else {
+        return Value::Null;
     };
 
-    obj.remove("id");
-    value
+    serde_json::json!({
+        "ratings": obj.get("ratings").cloned(),
+        "animeCover": obj.get("anime_cover").cloned()
+    })
 }

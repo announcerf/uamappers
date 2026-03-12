@@ -62,7 +62,7 @@ impl MapperEnrich {
             let page = self.load_beatmapset_details(page).await?;
 
             let page_len = page.len();
-            let payload = build_page_payload(&self.beatmapsets_repo, &page);
+            let payload = build_page_payload(&page);
             pages_persisted = pages_persisted.saturating_add(1);
             beatmapsets_persisted = beatmapsets_persisted.saturating_add(page_len as u64);
             relations_upserted =
