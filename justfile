@@ -85,19 +85,22 @@ nuke:
 
 [doc("Apply SeaORM migrations to local docker Postgres")]
 migrate:
-	@set -a; . {{dev_env}}; set +a; \
-	i=0; \
-	until docker compose -f {{dev_compose}} -p {{project}} exec -T postgres pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; do \
-		i=$((i+1)); \
-		if [ $i -ge 30 ]; then \
-			echo "postgres is not ready"; \
-			exit 1; \
-		fi; \
-		sleep 1; \
-	done
-	docker compose -f {{dev_compose}} -p {{project}} --profile migrator build migrator
-	DATABASE_URL="postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB" \
-	docker compose -f {{dev_compose}} -p {{project}} --profile migrator run --rm -e DATABASE_URL migrator up
+	@sh -ec ' \
+		set -a; . {{dev_env}}; set +a; \
+		i=0; \
+		until docker compose -f {{dev_compose}} -p {{project}} exec -T postgres pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB" >/dev/null 2>&1; do \
+			i=$((i+1)); \
+			if [ "$i" -ge 30 ]; then \
+				echo "postgres is not ready"; \
+				exit 1; \
+			fi; \
+			sleep 1; \
+		done; \
+		docker compose -f {{dev_compose}} -p {{project}} --profile migrator build migrator; \
+		DATABASE_URL="postgres://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB"; \
+		export DATABASE_URL; \
+		docker compose -f {{dev_compose}} -p {{project}} --profile migrator run --rm -e DATABASE_URL migrator up \
+	'
 
 [doc("Open a psql shell inside the postgres container")]
 psql:
