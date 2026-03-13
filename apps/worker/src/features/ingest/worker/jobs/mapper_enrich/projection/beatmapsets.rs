@@ -99,8 +99,16 @@ pub fn mapset_to_profile_row(
         title_unicode: mapset.title_unicode.clone(),
         source: mapset.source.clone(),
         tags: mapset.tags.clone(),
-        genre: mapset.genre.map(genre_to_str).map(genre_code),
-        language: mapset.language.map(language_to_str).map(language_code),
+        genre: mapset
+            .genre
+            .map(genre_to_str)
+            .map(genre_code)
+            .unwrap_or_else(|| genre_code("unspecified")),
+        language: mapset
+            .language
+            .map(language_to_str)
+            .map(language_code)
+            .unwrap_or_else(|| language_code("unspecified")),
         status: status_code(rank_status_to_str(mapset.status)),
         submitted_date: mapset.submitted_date.map(offset_to_utc),
         ranked_date: mapset.ranked_date.map(offset_to_utc),

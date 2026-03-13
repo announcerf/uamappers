@@ -1,6 +1,7 @@
 use rosu_v2::model::beatmap::BeatmapsetExtended;
 use rosu_v2::error::OsuError;
 use rosu_v2::model::user::UserBeatmapsetsKind;
+use uamappers_api::features::mappers::storage::codes::{genre_code, language_code};
 use uamappers_api::entities::ua_mapper;
 use std::collections::HashMap;
 
@@ -171,7 +172,10 @@ fn needs_detail_fetch(
         return false;
     }
 
-    let has_existing_metadata = existing.genre.is_some() && existing.language.is_some();
+    if !is_same_version {
+        return true;
+    }
 
-    !(has_existing_metadata && is_same_version)
+    existing.genre == genre_code("unspecified")
+        || existing.language == language_code("unspecified")
 }

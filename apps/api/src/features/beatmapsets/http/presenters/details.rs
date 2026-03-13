@@ -72,12 +72,8 @@ pub fn beatmapset_details_to_dto(
             artist_unicode: details.beatmapset.artist_unicode,
             creator_name,
             status: status_str(details.beatmapset.status).to_string(),
-            genre: details.beatmapset.genre.and_then(genre_str).map(str::to_string),
-            language: details
-                .beatmapset
-                .language
-                .and_then(language_str)
-                .map(str::to_string),
+            genre: genre_str(details.beatmapset.genre).map(str::to_string),
+            language: language_str(details.beatmapset.language).map(str::to_string),
             source: details.beatmapset.source,
             tags: details.beatmapset.tags,
             cover_url: details.beatmapset.cover_url,

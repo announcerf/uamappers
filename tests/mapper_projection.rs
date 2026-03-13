@@ -185,8 +185,8 @@ fn beatmapset_projection_flattens_mapset_and_nested_maps() {
     assert_eq!(mapset_extra.creator_name, "Mapper");
     assert!(!mapset_extra.details_unavailable);
     assert_eq!(mapset_row.osu_beatmapset_id, 1000);
-    assert_eq!(mapset_row.genre, Some(genre_code("anime")));
-    assert_eq!(mapset_row.language, Some(language_code("japanese")));
+    assert_eq!(mapset_row.genre, genre_code("anime"));
+    assert_eq!(mapset_row.language, language_code("japanese"));
     assert_eq!(mapset_row.status, status_code("ranked"));
 
     assert_eq!(map_rows.len(), 1);
