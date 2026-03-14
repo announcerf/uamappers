@@ -1,0 +1,8 @@
+:root {
+  --font-sans: 'KyivType Sans', sans-serif;
+  --font-size-base: 1.125rem;
+}
+
+@theme inline {
+  --font-sans: var(--font-sans);
+}

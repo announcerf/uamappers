@@ -1,0 +1,93 @@
+:root {
+  --background: #111111;
+  --foreground: #e7eafd;
+  --muted: #676a7e;
+  --muted-foreground: #9d9faf;
+  --card: #000000;
+  --outline: #262626;
+
+  --accent-blue: #5a69f2;
+  --accent-blue-dim: #202560;
+  --accent-blue-muted: #0d0f26;
+  --accent-blue-hover: #c7ccfb;
+
+  --accent-yellow: #f6d357;
+  --accent-yellow-dim: #605220;
+  --accent-yellow-hover: #fbecb6;
+
+  --accent-green: #35ca78;
+  --accent-green-dim: #1a4b31;
+  --accent-green-muted: #0b2818;
+  --accent-green-hover: #9ae5bc;
+
+  --accent-red: #f2555a;
+
+  --accent-purple: #8b5af2;
+  --accent-purple-dim: #33265c;
+  --accent-purple-muted: #110c1f;
+  --accent-purple-hover: #d1c2fb;
+
+  --accent-lavender: #8e7ab8;
+  --accent-lavender-dim: #42375c;
+  --accent-lavender-muted: #181524;
+  --accent-lavender-hover: #d9d2e8;
+
+  --accent-pink: #c5598c;
+  --accent-pink-dim: #60203e;
+  --accent-pink-muted: #391425;
+  --accent-pink-hover: #ebc6d8;
+
+  --accent-aqua: #75fbfd;
+
+  --accent-orange: #f28157;
+  --accent-orange-dim: #5c3323;
+  --accent-orange-muted: #5f1f07;
+  --accent-orange-hover: #fbd0c1;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-outline: var(--outline);
+
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-blue-dim: var(--accent-blue-dim);
+  --color-accent-blue-muted: var(--accent-blue-muted);
+  --color-accent-blue-hover: var(--accent-blue-hover);
+
+  --color-accent-yellow: var(--accent-yellow);
+  --color-accent-yellow-dim: var(--accent-yellow-dim);
+  --color-accent-yellow-hover: var(--accent-yellow-hover);
+
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-dim: var(--accent-green-dim);
+  --color-accent-green-muted: var(--accent-green-muted);
+  --color-accent-green-hover: var(--accent-green-hover);
+
+  --color-accent-red: var(--accent-red);
+
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-purple-dim: var(--accent-purple-dim);
+  --color-accent-purple-muted: var(--accent-purple-muted);
+  --color-accent-purple-hover: var(--accent-purple-hover);
+
+  --color-accent-lavender: var(--accent-lavender);
+  --color-accent-lavender-dim: var(--accent-lavender-dim);
+  --color-accent-lavender-muted: var(--accent-lavender-muted);
+  --color-accent-lavender-hover: var(--accent-lavender-hover);
+
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-pink-dim: var(--accent-pink-dim);
+  --color-accent-pink-muted: var(--accent-pink-muted);
+  --color-accent-pink-hover: var(--accent-pink-hover);
+
+  --color-accent-aqua: var(--accent-aqua);
+
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-orange-dim: var(--accent-orange-dim);
+  --color-accent-orange-muted: var(--accent-orange-muted);
+  --color-accent-orange-hover: var(--accent-orange-hover);
+}
