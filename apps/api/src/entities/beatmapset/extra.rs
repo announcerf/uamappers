@@ -8,7 +8,6 @@ pub struct Model {
     pub creator_id: i64,
     pub creator_name: String,
     pub anime_cover: Option<String>,
-    pub details_unavailable: bool,
     pub updated_at: DateTimeUtc,
 }
 

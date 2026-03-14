@@ -1,4 +1,4 @@
-use crate::features::mappers::storage::codes::{genre_str, language_str, mode_str, status_str};
+use crate::features::mappers::storage::codes::{mode_str, status_str};
 
 use super::super::dto::{
     BeatmapDifficultyDetailDto, BeatmapDifficultyOverviewDto, BeatmapsetAnalyticsDto,
@@ -72,10 +72,6 @@ pub fn beatmapset_details_to_dto(
             artist_unicode: details.beatmapset.artist_unicode,
             creator_name,
             status: status_str(details.beatmapset.status).to_string(),
-            genre: genre_str(details.beatmapset.genre).map(str::to_string),
-            language: language_str(details.beatmapset.language).map(str::to_string),
-            source: details.beatmapset.source,
-            tags: details.beatmapset.tags,
             cover_url: details.beatmapset.cover_url,
             card_url: details.beatmapset.card_url,
             submitted_date: details.beatmapset.submitted_date,

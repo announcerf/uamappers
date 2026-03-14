@@ -26,6 +26,7 @@ pub mod m20260312_000025_drop_redundant_created_at;
 pub mod m20260313_000026_add_details_unavailable_to_beatmapset_extras;
 pub mod m20260313_000027_reduce_beatmapset_storage_fields;
 pub mod m20260314_000028_backfill_unspecified_genre_language;
+pub mod m20260314_000029_remove_beatmapset_detail_fields;
 use sea_orm_migration::prelude::*;
 
 pub struct Migrator;
@@ -61,6 +62,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260313_000026_add_details_unavailable_to_beatmapset_extras::Migration),
             Box::new(m20260313_000027_reduce_beatmapset_storage_fields::Migration),
             Box::new(m20260314_000028_backfill_unspecified_genre_language::Migration),
+            Box::new(m20260314_000029_remove_beatmapset_detail_fields::Migration),
         ]
     }
 }

@@ -10,7 +10,6 @@ pub struct NewBeatmapsetExtraRow {
     pub creator_id: i64,
     pub creator_name: String,
     pub anime_cover: Option<String>,
-    pub details_unavailable: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -67,7 +66,6 @@ impl BeatmapsetExtraRepo {
                             beatmapset_extra::Column::CreatorId,
                             beatmapset_extra::Column::CreatorName,
                             beatmapset_extra::Column::AnimeCover,
-                            beatmapset_extra::Column::DetailsUnavailable,
                             beatmapset_extra::Column::UpdatedAt,
                         ])
                         .to_owned(),
@@ -87,7 +85,6 @@ impl BeatmapsetExtraRepo {
             creator_id: Set(row.creator_id),
             creator_name: Set(row.creator_name),
             anime_cover: Set(row.anime_cover),
-            details_unavailable: Set(row.details_unavailable),
             updated_at: Set(now),
         }
     }

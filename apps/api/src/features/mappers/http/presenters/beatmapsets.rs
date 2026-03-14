@@ -1,4 +1,4 @@
-use crate::features::mappers::storage::codes::{genre_str, language_str, status_str};
+use crate::features::mappers::storage::codes::status_str;
 use crate::features::mappers::usecases::BeatmapsetPage;
 
 use super::super::dto::{BeatmapsetDto, BeatmapsetListResponse};
@@ -29,10 +29,6 @@ fn beatmapset_to_dto(model: crate::features::mappers::usecases::BeatmapsetListIt
         title: model.profile.title,
         title_unicode: model.profile.title_unicode,
         status: status_str(model.profile.status).to_string(),
-        genre: genre_str(model.profile.genre).map(str::to_string),
-        language: language_str(model.profile.language).map(str::to_string),
-        source: model.profile.source,
-        tags: model.profile.tags,
         cover_url: model.profile.cover_url,
         card_url: model.profile.card_url,
         submitted_date: model.profile.submitted_date,
