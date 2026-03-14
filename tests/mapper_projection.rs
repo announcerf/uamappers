@@ -4,7 +4,7 @@ use chrono::Utc;
 use rosu_v2::model::beatmap::BeatmapsetExtended;
 use rosu_v2::model::user::UserExtended;
 use serde_json::json;
-use uamappers_api::features::mappers::storage::codes::{genre_code, language_code, mode_code, status_code};
+use uamappers_api::features::mappers::storage::codes::{mode_code, status_code};
 use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::projection::beatmapsets::{
     maps_to_profile_rows, mapset_to_extra_row, mapset_to_profile_row,
 };
@@ -178,15 +178,12 @@ fn beatmapset_projection_flattens_mapset_and_nested_maps() {
     }))
     .expect("mapset json should deserialize");
 
-    let mapset_extra = mapset_to_extra_row(&mapset, false);
+    let mapset_extra = mapset_to_extra_row(&mapset);
     let mapset_row = mapset_to_profile_row(&mapset, cached_at);
     let map_rows = maps_to_profile_rows(&mapset, cached_at);
 
     assert_eq!(mapset_extra.creator_name, "Mapper");
-    assert!(!mapset_extra.details_unavailable);
     assert_eq!(mapset_row.osu_beatmapset_id, 1000);
-    assert_eq!(mapset_row.genre, genre_code("anime"));
-    assert_eq!(mapset_row.language, language_code("japanese"));
     assert_eq!(mapset_row.status, status_code("ranked"));
 
     assert_eq!(map_rows.len(), 1);

@@ -2,7 +2,7 @@ use chrono::{TimeZone, Utc};
 use serde_json::json;
 use uamappers_api::entities::{beatmap_profile, beatmapset_profile, osu_user_beatmapset};
 use uamappers_api::features::mappers::storage::{
-    codes::{genre_code, kind_code, language_code, mode_code, status_code},
+    codes::{kind_code, mode_code, status_code},
     osu_user_fingerprint::{MapperFingerprint, MapperKudosu},
 };
 use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::aggregate::build_mapper_stats_row;
@@ -83,10 +83,6 @@ fn mapset(
         artist_unicode: None,
         title: "Title".to_string(),
         title_unicode: None,
-        source: String::new(),
-        tags: String::new(),
-        genre: genre_code("unspecified"),
-        language: language_code("unspecified"),
         status: status_code(status),
         submitted_date: Some(Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap()),
         ranked_date: Some(Utc.with_ymd_and_hms(2024, 2, 1, 0, 0, 0).unwrap()),

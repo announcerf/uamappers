@@ -1,6 +1,6 @@
 use chrono::Utc;
 use serde_json::json;
-use uamappers_api::features::mappers::storage::codes::{genre_code, language_code, mode_code, status_code};
+use uamappers_api::features::mappers::storage::codes::{mode_code, status_code};
 use uamappers_api::features::beatmapsets::http::presenters::beatmapset_details_to_dto;
 
 #[test]
@@ -13,10 +13,6 @@ fn beatmapset_details_to_dto_builds_headline_and_difficulty_sections() {
             artist_unicode: None,
             title: "Title".to_string(),
             title_unicode: None,
-            source: String::new(),
-            tags: String::new(),
-            genre: genre_code("anime"),
-            language: language_code("japanese"),
             status: status_code("ranked"),
             submitted_date: Some(now),
             ranked_date: Some(now),
@@ -39,7 +35,6 @@ fn beatmapset_details_to_dto_builds_headline_and_difficulty_sections() {
             creator_id: 42,
             creator_name: "Mapper".to_string(),
             anime_cover: None,
-            details_unavailable: false,
             updated_at: now,
         }),
         beatmaps: vec![uamappers_api::entities::beatmap_profile::Model {

@@ -5,7 +5,7 @@ use rosu_v2::model::beatmap::BeatmapsetExtended;
 use serde_json::json;
 use uamappers_api::entities::{beatmap_profile, beatmapset_profile};
 use uamappers_api::features::mappers::storage::{
-    codes::{genre_code, language_code, mode_code, status_code},
+    codes::{mode_code, status_code},
     mapper_stats_current_repo::NewMapperStatsCurrentRow,
 };
 use uamappers_worker::features::ingest::worker::jobs::mapper_enrich::snapshot::{
@@ -149,10 +149,6 @@ fn mapset_model() -> beatmapset_profile::Model {
         artist_unicode: None,
         title: "Title".to_string(),
         title_unicode: None,
-        source: String::new(),
-        tags: String::new(),
-        genre: genre_code("unspecified"),
-        language: language_code("unspecified"),
         status: status_code("ranked"),
         submitted_date: None,
         ranked_date: None,
