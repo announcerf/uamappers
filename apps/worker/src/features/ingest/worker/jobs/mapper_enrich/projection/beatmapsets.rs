@@ -1,17 +1,13 @@
 use rosu_v2::model::beatmap::{BeatmapExtended, BeatmapsetExtended};
 use rosu_v2::model::user::UserBeatmapsetsKind;
-use uamappers_api::features::mappers::storage::codes::{
-    genre_code, language_code, mode_code, status_code,
-};
+use uamappers_api::features::mappers::storage::codes::{mode_code, status_code};
 use uamappers_api::features::mappers::storage::{
     beatmap_profile_repo::NewBeatmapProfileRow, beatmapset_extra_repo::NewBeatmapsetExtraRow,
     beatmapset_profile_repo::NewBeatmapsetProfileRow,
     beatmapset_snapshot_weekly_repo::NewBeatmapsetSnapshotWeeklyRow,
 };
 
-use super::shared::{
-    genre_to_str, language_to_str, mode_to_str, offset_to_utc, rank_status_to_str, to_json_array,
-};
+use super::shared::{mode_to_str, offset_to_utc, rank_status_to_str, to_json_array};
 use crate::features::ingest::worker::jobs::mapper_enrich::snapshot::mapset_to_snapshot_row;
 
 pub struct BeatmapsetsPersistPage {
@@ -21,11 +17,6 @@ pub struct BeatmapsetsPersistPage {
     pub beatmap_profiles: Vec<NewBeatmapProfileRow>,
     pub beatmap_ids_by_mapset: Vec<(i64, Vec<i64>)>,
     pub beatmapset_ids: Vec<i64>,
-}
-
-pub struct PersistedBeatmapset {
-    pub mapset: BeatmapsetExtended,
-    pub details_unavailable: bool,
 }
 
 pub fn kind_to_str(kind: UserBeatmapsetsKind) -> &'static str {
@@ -40,7 +31,7 @@ pub fn kind_to_str(kind: UserBeatmapsetsKind) -> &'static str {
     }
 }
 
-pub fn build_page_payload(page: &[PersistedBeatmapset]) -> BeatmapsetsPersistPage {
+pub fn build_page_payload(page: &[BeatmapsetExtended]) -> BeatmapsetsPersistPage {
     let mut beatmapset_extras = Vec::new();
     let mut beatmapset_profiles = Vec::new();
     let mut beatmapset_snapshots = Vec::new();
@@ -51,9 +42,8 @@ pub fn build_page_payload(page: &[PersistedBeatmapset]) -> BeatmapsetsPersistPag
     let weekly_snapshot =
         crate::features::ingest::worker::jobs::mapper_enrich::snapshot::snapshot_week(cached_at);
 
-    for item in page {
-        let mapset = &item.mapset;
-        beatmapset_extras.push(mapset_to_extra_row(mapset, item.details_unavailable));
+    for mapset in page {
+        beatmapset_extras.push(mapset_to_extra_row(mapset));
         beatmapset_ids.push(mapset.mapset_id as i64);
         beatmapset_profiles.push(mapset_to_profile_row(mapset, cached_at));
         beatmapset_snapshots.push(mapset_to_snapshot_row(mapset, weekly_snapshot));
@@ -74,16 +64,12 @@ pub fn build_page_payload(page: &[PersistedBeatmapset]) -> BeatmapsetsPersistPag
     }
 }
 
-pub fn mapset_to_extra_row(
-    mapset: &BeatmapsetExtended,
-    details_unavailable: bool,
-) -> NewBeatmapsetExtraRow {
+pub fn mapset_to_extra_row(mapset: &BeatmapsetExtended) -> NewBeatmapsetExtraRow {
     NewBeatmapsetExtraRow {
         osu_beatmapset_id: mapset.mapset_id as i64,
         creator_id: mapset.creator_id as i64,
         creator_name: mapset.creator_name.to_string(),
         anime_cover: None,
-        details_unavailable,
     }
 }
 
@@ -97,18 +83,6 @@ pub fn mapset_to_profile_row(
         artist_unicode: mapset.artist_unicode.clone(),
         title: mapset.title.clone(),
         title_unicode: mapset.title_unicode.clone(),
-        source: mapset.source.clone(),
-        tags: mapset.tags.clone(),
-        genre: mapset
-            .genre
-            .map(genre_to_str)
-            .map(genre_code)
-            .unwrap_or_else(|| genre_code("unspecified")),
-        language: mapset
-            .language
-            .map(language_to_str)
-            .map(language_code)
-            .unwrap_or_else(|| language_code("unspecified")),
         status: status_code(rank_status_to_str(mapset.status)),
         submitted_date: mapset.submitted_date.map(offset_to_utc),
         ranked_date: mapset.ranked_date.map(offset_to_utc),
