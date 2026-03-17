@@ -7,7 +7,7 @@
 ## TL;DR
 
 ```bash
-cp infra/env/dev/app.env.example infra/env/dev/app.env
+just env-init
 just preflight
 just install
 just up

@@ -8,13 +8,17 @@ help:
 
 [doc("Local preflight (env files, docker daemon, required tools)")]
 preflight:
-	@test -f {{dev_env}} || (echo "Missing {{dev_env}}. Copy infra/env/dev/app.env.example first." && exit 1)
+	@test -f {{dev_env}} || (echo "Missing {{dev_env}}. Run just env-init first." && exit 1)
 	@command -v docker >/dev/null || (echo "docker not found" && exit 1)
 	@docker compose version >/dev/null 2>&1 || (echo "docker compose plugin not available" && exit 1)
 	@docker info >/dev/null 2>&1 || (echo "docker daemon is not running" && exit 1)
 	@command -v cargo >/dev/null || (echo "cargo not found" && exit 1)
 	@command -v bun >/dev/null || (echo "bun not found" && exit 1)
 	@echo "Preflight OK"
+
+[doc("Copy the dev env example into place")]
+env-init:
+	cp infra/env/dev/app.env.example {{dev_env}}
 
 [doc("Run clippy for the whole workspace (fail on warnings)")]
 clippy:
