@@ -32,7 +32,7 @@ Local endpoints:
 Optional non-Docker runs:
 
 ```bash
-just api-dev
+just up api
 just web-dev
 ```
 
