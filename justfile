@@ -57,17 +57,20 @@ lint:
 typecheck:
 	bun run typecheck
 
-[doc("Run the API locally (no docker)")]
-api-dev:
-	set -a; . {{dev_env}}; set +a; cargo run -p uamappers-api
-
 [doc("Run the web frontend locally with Bun (no docker)")]
 web-dev:
 	bun run --cwd apps/web dev
 
-[doc("Start local dev stack via Docker (postgres + api + web)")]
-up:
-	docker compose -f {{dev_compose}} -p {{project}} up -d
+[doc("Start local dev stack via Docker, or run the API with `just up api`")]
+up target="stack":
+	@if [ "{{target}}" = "stack" ]; then \
+		docker compose -f {{dev_compose}} -p {{project}} up -d; \
+	elif [ "{{target}}" = "api" ]; then \
+		set -a; . {{dev_env}}; set +a; cargo run -p uamappers-api; \
+	else \
+		echo "Unknown up target: {{target}}. Use stack or api." >&2; \
+		exit 1; \
+	fi
 
 [doc("Stop local dev stack")]
 down:
