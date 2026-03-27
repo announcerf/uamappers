@@ -3,10 +3,10 @@ import { cva } from 'class-variance-authority';
 export const typographyVariants = cva('!leading-none tracking-[-0.04em]', {
   variants: {
     size: {
-      xl: 'text-[1.75rem]',
-      md: 'text-[1.125rem]',
-      sm: 'text-[0.875rem]',
-      xs: 'text-[0.75rem]',
+      lg: 'text-lg',
+      md: 'text-md',
+      sm: 'text-sm',
+      xs: 'text-xs',
     },
     weight: {
       light: 'font-light',

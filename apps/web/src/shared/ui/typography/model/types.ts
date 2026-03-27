@@ -1,4 +1,4 @@
-export type TypoSize = 'xs' | 'sm' | 'md' | 'xl';
+export type TypoSize = 'xs' | 'sm' | 'md' | 'lg';
 export type TypoWeight =
   | 'light'
   | 'regular'
