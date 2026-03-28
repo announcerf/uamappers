@@ -1,4 +1,4 @@
-import type { ExtractPropTypes, PropType } from 'vue';
+import type { Component, ExtractPropTypes, PropType } from 'vue';
 
 import type {
   ButtonProps,
@@ -12,6 +12,14 @@ export const buttonProps = {
   },
   class: {
     type: String as PropType<ButtonProps['class']>,
+    default: undefined,
+  },
+  hasIcon: {
+    type: Boolean,
+    default: false,
+  },
+  icon: {
+    type: [Object, Function] as PropType<Component>,
     default: undefined,
   },
 } as const;

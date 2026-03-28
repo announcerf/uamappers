@@ -1,4 +1,4 @@
-import { computed } from 'vue';
+import { computed, markRaw, useAttrs } from 'vue';
 
 import { cn } from '@/shared/lib/cn';
 import { buttonVariants } from '@/shared/ui/button/lib/variants';
@@ -9,5 +9,12 @@ export const useButton = (props: ButtonProps) => {
     return cn(buttonVariants({ variant: props.variant }), props.class);
   });
 
-  return { className };
+  const iconComponent = computed(() => {
+    if (!props.hasIcon || !props.icon) {
+      return undefined;
+    }
+    return props.icon;
+  });
+
+  return { className, iconComponent };
 };

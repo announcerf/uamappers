@@ -10,6 +10,8 @@ export type ButtonVariant =
 
 export type ButtonProps = {
   variant?: ButtonVariant;
+  hasIcon?: boolean;
+  icon?: Component;
   title?: string;
   class?: string;
 };
