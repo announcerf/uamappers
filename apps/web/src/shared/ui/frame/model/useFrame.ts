@@ -10,7 +10,9 @@ export const useFrame = (props: FrameProps) => {
   });
 
   const contentClassName = computed(() => {
-    return cn('relative min-h-8 min-w-8 px-3 py-4');
+    return cn(
+      'relative min-h-8 min-w-8 px-3 py-4 flex h-full items-center justify-center'
+    );
   });
 
   const accentLineClassName = computed(() => {
