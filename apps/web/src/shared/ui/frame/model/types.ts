@@ -1,13 +1,15 @@
 export type FrameAs = keyof HTMLElementTagNameMap;
 
 export type FrameVariant =
-  | 'ranked'
-  | 'loved'
-  | 'nat'
-  | 'bn'
-  | 'pbn'
-  | 'fa'
-  | 'gmt'
+  | 'blue'
+  | 'green'
+  | 'pink'
+  | 'orange'
+  | 'red'
+  | 'purple'
+  | 'lavander'
+  | 'aqua'
+  | 'yellow'
   | 'default';
 
 export type FrameProps = {

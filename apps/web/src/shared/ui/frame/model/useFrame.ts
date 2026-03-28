@@ -15,7 +15,7 @@ export const useFrame = (props: FrameProps) => {
 
   const accentLineClassName = computed(() => {
     return cn(
-      'pointer-events-none absolute top-1 right-1 left-1 h-0.5 bg-[var(--frame-accent)]'
+      'pointer-events-none absolute top-0 right-0 left-0 h-0.5 bg-[var(--frame-accent)]'
     );
   });
 

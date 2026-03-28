@@ -15,13 +15,15 @@ export const frameVariants = cva(
   {
     variants: {
       variant: {
-        ranked: '[--frame-accent:var(--accent-green)]',
-        loved: '[--frame-accent:var(--accent-pink)]',
-        nat: '[--frame-accent:var(--accent-red)]',
-        bn: '[--frame-accent:var(--accent-purple)]',
-        pbn: '[--frame-accent:var(--accent-lavender)]',
-        fa: '[--frame-accent:var(--accent-aqua)]',
-        gmt: '[--frame-accent:var(--accent-yellow)]',
+        blue: '[--frame-accent:var(--accent-blue-hover)]',
+        green: '[--frame-accent:var(--accent-green-hover)]',
+        pink: '[--frame-accent:var(--accent-pink-hover)]',
+        orange: '[--frame-accent:var(--accent-orange-hover)]',
+        red: '[--frame-accent:var(--accent-red)]',
+        purple: '[--frame-accent:var(--accent-purple-hover)]',
+        lavander: '[--frame-accent:var(--accent-lavender-hover)]',
+        aqua: '[--frame-accent:var(--accent-aqua)]',
+        yellow: '[--frame-accent:var(--accent-yellow-hover)]',
         default: '[--frame-accent:var(--outline)]',
       },
     },
