@@ -1,12 +1,8 @@
 import type { Component } from 'vue';
 
-export type ButtonVariant =
-  | 'blue'
-  | 'green'
-  | 'pink'
-  | 'orange'
-  | 'lavander'
-  | 'default';
+import type { FrameVariant } from '@/shared/ui';
+
+export type ButtonVariant = Exclude<FrameVariant, 'red' | 'aqua' | 'yellow'>;
 
 export type ButtonProps = {
   variant?: ButtonVariant;

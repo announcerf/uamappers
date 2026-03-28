@@ -4,26 +4,38 @@ import { useButton } from '@/shared/ui/button/model/useButton';
 
 const props = withDefaults(defineProps<ButtonProps>(), {
   variant: 'default',
-  hasIcon: false,
 });
-const { className, iconComponent } = useButton(props);
+const {
+  className,
+  textClassName,
+  iconClassName,
+  separatorClassName,
+  iconComponent,
+} = useButton(props);
 </script>
 
 <template>
   <Frame as="button" :variant="props.variant" :class="className">
-    <div class="flex items-center gap-1">
+    <div class="flex items-center gap-3">
       <template v-if="iconComponent">
-        <component
-          :is="iconComponent"
-          :size="16"
-          class="shrink-0"
-          aria-hidden="true"
-        />
-        <span aria-hidden="true" class="h-4 w-px shrink-0"></span>
+        <div class="flex items-center gap-1">
+          <component
+            :is="iconComponent"
+            :size="16"
+            :class="iconClassName"
+            class="shrink-0"
+            aria-hidden="true"
+          />
+          <span
+            aria-hidden="true"
+            :class="separatorClassName"
+            class="h-4 w-px shrink-0"
+          />
+        </div>
       </template>
+      <Typography size="xs" weight="medium" :class-name="textClassName">
+        <slot />
+      </Typography>
     </div>
-    <Typography size="xs" weight="medium">
-      <slot />
-    </Typography>
   </Frame>
 </template>

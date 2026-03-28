@@ -14,10 +14,6 @@ export const buttonProps = {
     type: String as PropType<ButtonProps['class']>,
     default: undefined,
   },
-  hasIcon: {
-    type: Boolean,
-    default: false,
-  },
   icon: {
     type: [Object, Function] as PropType<Component>,
     default: undefined,
